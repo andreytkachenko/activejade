@@ -1,0 +1,29 @@
+{
+  "name": "activejade",
+  "version": "1.0.0",
+  "description": "ActiveJade is a variant of original Jade(jade-lang.com) project aimed to work properly with MVVM frameworks",
+  "main": "Gruntfile.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andreytkachenko/activejade.git"
+  },
+  "keywords": [
+    "activejade",
+    "jade",
+    "template"
+  ],
+  "author": "Andrey Tkachenko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/andreytkachenko/activejade/issues"
+  },
+  "homepage": "https://github.com/andreytkachenko/activejade#readme",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-cli": "^0.1.13",
+    "grunt-jison": "^1.3.2"
+  }
+}
