@@ -4,9 +4,7 @@
 
 var extend = require('extend');
 
-var Node = function () {
-
-};
+var Node = function () {};
 
 Node.prototype = {
     hasBlock: false,

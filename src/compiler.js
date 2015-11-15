@@ -1,17 +1,71 @@
 /**
  * Created by tkachenko on 16.04.15.
  */
+
+var util = require("util");
+
 var parser = require("./dist/parser").parser;
 parser.yy.$ = require("./lib/scope");
-var jsbeautify = require("js-beautify");
-var html = require("html");
 
-var fs = require("fs");
-var util = require("util");
-var extend = require("extend");
+var Compiler = function (parser) {
+    this.parser = parser;
+};
 
+Compiler.prototype = {
+    compile: function (source, name, callback_name) {
+        var val = this.walkTags(this.parser.parse(source + '\n'), 0)
+        var items = [];
+        var ids = [];
+        for (var i = 0; i < val.values.length; i++) {
+            items.push(val.values[i][1]);
+            ids.push(val.values[i][0]);
+        }
 
-var generator = {
+        return util.format('%s("%s", function(s,d){%s; return [n_%s];});', 
+                            callback_name, name, items.join(''), ids.join(',n_'));
+    },
+    
+    walkNode: function (node) {
+        if (!this['walk' + node.type]) {
+            console.dir(node);
+            throw new Error('Unknown ' + node.type);
+        }
+        return this['walk' + node.type].apply(this, arguments);
+    },
+
+    walkTags: function(nodes, parent) {
+        var value = [];
+        var deps = [];
+        var data;
+
+        for (var i = 0; i < nodes.length; i++) {
+            data = this.walkNode(nodes[i], parent);
+            value.push(data);
+            deps.concat(data.deps);
+        }
+
+        return {
+            values: value,
+            deps: deps
+        };
+    },
+
+    walkList: function(nodes) {
+        var value = [];
+        var deps = [];
+        var data;
+
+        for (var i = 0; i < nodes.length; i++) {
+            data = this.walkNode(nodes[i]);
+            value.push(data.value);
+            deps = deps.concat(data.deps);
+        }
+
+        return {
+            values: value,
+            deps: deps
+        };
+    },
     
     /** Expressions **/
     
@@ -23,7 +77,7 @@ var generator = {
     },
     
     walkStringArray: function (node) {
-        var nodes = walkList(node.nodes);
+        var nodes = this.walkList(node.nodes);
         
         return {
             value: '[' + nodes.values.join(', ') + '].join("")',
@@ -46,7 +100,7 @@ var generator = {
     },
     
     walkPropertyOp: function (node) {
-        var object = walkNode(node.object);
+        var object = this.walkNode(node.object);
         return {
             value: object.value + '.' + node.property,
             deps: object.deps
@@ -54,8 +108,8 @@ var generator = {
     },
     
     walkIndexOp: function (node) {
-        var index = walkNode(node.index);
-        var expr = walkNode(node.expr);
+        var index = this.walkNode(node.index);
+        var expr = this.walkNode(node.expr);
         
         return {
             value: '(' + expr.value + ')[' + index.value + ']',
@@ -64,7 +118,7 @@ var generator = {
     },
     
     walkSliceOp: function (node) {
-        var vals = walkList([node.expr, node.from, node.to]);
+        var vals = this.walkList([node.expr, node.from, node.to]);
         
         return {
             value: '(' + vals.values[0] + ').slice(' + vals.values[1] + ', ' + vals.values[2] + ')',
@@ -73,9 +127,9 @@ var generator = {
     },
     
     walkConditionOp: function (node) {
-        var cond = walkNode(node.cond);
-        var onTrue = walkNode(node.onTrue);
-        var onFalse = walkNode(node.onFalse);
+        var cond = this.walkNode(node.cond);
+        var onTrue = this.walkNode(node.onTrue);
+        var onFalse = this.walkNode(node.onFalse);
         
         return {
             value: cond.value + ' ? ' + onTrue.value + ' : ' + onFalse.value,
@@ -84,8 +138,8 @@ var generator = {
     },
     
     walkCallExpression: function (node) {
-        var callee = walkNode(node.callee);
-        var args = walkList(node.args);
+        var callee = this.walkNode(node.callee);
+        var args = this.walkList(node.args);
         
         return {
             value: callee.value + '(' + args.values.join(', ') + ')',
@@ -94,7 +148,7 @@ var generator = {
     },
     
     walkUnaryExpression: function (node) {
-        var right = walkNode(node.right);
+        var right = this.walkNode(node.right);
         var space = node.operator === 'new' ? ' ' : '';
         
         return {
@@ -104,12 +158,12 @@ var generator = {
     },
     
     walkBinaryExpression: function (node) {
-        var left = walkNode(node.left);
-        var right = walkNode(node.right);
+        var left = this.walkNode(node.left);
+        var right = this.walkNode(node.right);
         var value = left.value + ' ' + node.operator + ' ' + right.value;
         
         if (node.operator === '..') {
-            value = 'driver.util.range(' + left.value + ', ' + right.value + ')';
+            value = 'd.util.range(' + left.value + ', ' + right.value + ')';
         }
 
         return {
@@ -119,7 +173,7 @@ var generator = {
     },
     
     walkArrayExpression: function (node) {
-        var elems = walkList(node.elements);
+        var elems = this.walkList(node.elements);
         
         return {
             value: '[' + elems.values.join(', ') + ']',
@@ -128,7 +182,7 @@ var generator = {
     },
     
     walkObjectExpression: function (node) {
-        var elems = walkList(node.properties);
+        var elems = this.walkList(node.properties);
         
         return {
             value: '{' + elems.values.join(', ') + '}',
@@ -137,7 +191,7 @@ var generator = {
     },
     
     walkObjectProperty: function (node) {
-        var expr = walkNode(node.expr);
+        var expr = this.walkNode(node.expr);
         
         return {
             value: node.id + ': ' + expr.value,
@@ -146,8 +200,8 @@ var generator = {
     },
     
     walkAssignmentExpression: function (node) {
-        var left = walkNode(node.left);
-        var right = walkNode(node.right);
+        var left = this.walkNode(node.left);
+        var right = this.walkNode(node.right);
         
         return {
             value: left.value + ' ' + node.operator + ' ' + right.value,
@@ -157,19 +211,19 @@ var generator = {
     
     walkStatement: function (node, parent_id) {
         var id = __gen_id();
-        var expr = walkNode(node.expr);
+        var expr = this.walkNode(node.expr);
         var expr_js = expr.value;
         if (expr.deps.length) {
             expr_js = __wrap(expr.value);
         }
         var parent_js = __wrap_f('n_'+parent_id);
         
-        return [id, util.format('var n_%d=driver.statement(s,%s,%s,[%s]);',id,parent_js,expr_js,__deps(expr.deps))];
+        return [id, util.format('var n_%d=d.statement(s,%s,%s,[%s]);',id,parent_js,expr_js,__deps(expr.deps))];
     },
     
     
     walkVariableStatement: function (node) {
-        var declarations = walkList(node.declarations);
+        var declarations = this.walkList(node.declarations);
         
         return {
             value: declarations.values.join(';')+';',
@@ -178,7 +232,7 @@ var generator = {
     },
     
     walkVariableDeclaration: function (node) {
-        var init = node.init ? walkNode(node.init) : null;
+        var init = node.init ? this.walkNode(node.init) : null;
         
         return {
             value: 's.' + node.id + '=' + (init ? init.value : 'undefined'),
@@ -187,10 +241,10 @@ var generator = {
     },
     
     walkExpressionStatement: function (node) {
-        var data = walkNode(node.expr);
+        var data = this.walkNode(node.expr);
         if (node.escape) {
             return {
-                value: 'driver.util.escape(' + data.value + ')',
+                value: 'd.util.escape(' + data.value + ')',
                 deps: data.deps
             };
         } else {
@@ -202,8 +256,8 @@ var generator = {
     
     walkWhile: function (node, parent_id) {
         var id = __gen_id();
-        var expr = walkNode(node.expr);
-        var block = walkTags(node.block, id);
+        var expr = this.walkNode(node.expr);
+        var block = this.walkTags(node.block, id);
         var expr_js = expr.value;
         
         if (expr.deps.length) {
@@ -213,15 +267,15 @@ var generator = {
         var parent_js = __wrap_f('n_' + parent_id);
         var block_js = __wrap_children(block);
         
-        return [id, util.format('var n_%d=driver.dowhile(s,%s,%s,%s,[%s]);',id,parent_js,block_js,expr_js,__deps(expr.deps))];
+        return [id, util.format('var n_%d=d.dowhile(s,%s,%s,%s,[%s]);',id,parent_js,block_js,expr_js,__deps(expr.deps))];
     },
     
     walkForIn: function (node, parent_id) {
         var id = __gen_id();
         var key = node.key;
         var value = node.value;
-        var expr = walkNode(node.expr);
-        var block = walkTags(node.block, id);
+        var expr = this.walkNode(node.expr);
+        var block = this.walkTags(node.block, id);
         var expr_js = expr.value;
         
         if (expr.deps.length) {
@@ -231,21 +285,21 @@ var generator = {
         var parent_js = __wrap_f('n_' + parent_id);
         var block_js = __wrap_children(block);
         
-        return [id, util.format('var n_%d=driver.forin(s,%s,%s,%s,"%s","%s",[%s]);',id,parent_js,block_js,expr_js,value,key,__deps(expr.deps))];
+        return [id, util.format('var n_%d=d.forin(s,%s,%s,%s,"%s","%s",[%s]);',id,parent_js,block_js,expr_js,value,key,__deps(expr.deps))];
     },
     
     /** Branching **/
     
     walkIfElse: function (node, parent_id) {
         var id = __gen_id();
-        var cond = walkNode(node.cond);
-        var onTrue = walkTags(node.onTrue, id);
+        var cond = this.walkNode(node.cond);
+        var onTrue = this.walkTags(node.onTrue, id);
         var onFalse = null;
         if (node.onFalse){
             if (node.onFalse instanceof Array) {
-                onFalse = walkTags(node.onFalse, id);
+                onFalse = this.walkTags(node.onFalse, id);
             } else {
-                onFalse = walkTags([node.onFalse], id);
+                onFalse = this.walkTags([node.onFalse], id);
             }
         }
         
@@ -267,12 +321,12 @@ var generator = {
         
         var children_js = '['+children.join(',')+']';
         
-        return [id, util.format('var n_%d=driver.ifelse(s,%s,%s,%s,[%s);',id,parent_js,children_js,cond_js,__deps(cond.deps))];
+        return [id, util.format('var n_%d=d.ifelse(s,%s,%s,%s,[%s);',id,parent_js,children_js,cond_js,__deps(cond.deps))];
     },
     
     walkCase: function (node, parent_id) {
         var id = __gen_id();
-        var expr = walkNode(node.expr);
+        var expr = this.walkNode(node.expr);
         expr = expr.deps ? __wrap(expr.value) : expr.value;
         var children_js = [];
         var exprs = [], tcase, texpr;
@@ -282,7 +336,7 @@ var generator = {
         
         for (var i = 0; i < node.cases.length; i++) {
             tcase = node.cases[i];
-            texpr = tcase.when ? walkNode(tcase.when) : null;
+            texpr = tcase.when ? this.walkNode(tcase.when) : null;
             
             if (texpr) {
                 exprs.push(util.format('{children:%d,expr:%s}', children_js.length, texpr.deps.length ? __wrap(texpr.value) : texpr.value));
@@ -292,14 +346,14 @@ var generator = {
             }
             
             if (tcase.block) {
-                var tags = walkTags(tcase.block);
+                var tags = this.walkTags(tcase.block);
                 children_js.push(__wrap_children(tags));
             }
         }
         
         return [
             id, 
-            util.format('var n_%d=driver.casewhen(s,%s,[%s],[%s],%s,%s,[%s]);',id,parent_js,children_js.join(','),exprs.join(','),expr,default_idx,__deps(deps))
+            util.format('var n_%d=d.casewhen(s,%s,[%s],[%s],%s,%s,[%s]);',id,parent_js,children_js.join(','),exprs.join(','),expr,default_idx,__deps(deps))
         ];
     },
     
@@ -317,7 +371,7 @@ var generator = {
     
     walkInclude: function (node, parent_id) {
         var id = __gen_id();
-        var href = walkNode(node.href);
+        var href = this.walkNode(node.href);
         var href_js = href.value;
         
         if (href.deps.length) {
@@ -326,7 +380,7 @@ var generator = {
         
         var parent_js = __wrap_f('n_'+parent_id);
         
-        return [id, util.format('var n_%d=driver.include(s,%s,%s,[%s]);',id,parent_js,href_js,__deps(href.deps))];
+        return [id, util.format('var n_%d=d.include(s,%s,%s,[%s]);',id,parent_js,href_js,__deps(href.deps))];
     },
     
     /** Filter **/
@@ -355,7 +409,7 @@ var generator = {
         var id = __gen_id();
         var parent_js = __wrap_f('n_'+parent_id);
         
-        var block = walkTags(node.block);
+        var block = this.walkTags(node.block);
         var children_js = __wrap_children(block);
         
         var args = [];
@@ -365,24 +419,24 @@ var generator = {
             args.push('"'+node.args.args[i].id+'"');
         }
 
-        return [id, util.format('var n_%d=driver.mixin(s,%s,%s,"%s",[%s],%s);',id,parent_js,children_js,node.id,args.join(','),ellipsis)];
+        return [id, util.format('var n_%d=d.mixin(s,%s,%s,"%s",[%s],%s);',id,parent_js,children_js,node.id,args.join(','),ellipsis)];
     },
     
     walkMixinCall: function (node, parent_id) {
         var id = __gen_id();
         var parent_js = __wrap_f('n_'+parent_id);
         
-        var args = walkList(node.args);
-        var attrs = node.attrs ? walkNode(node.attrs) : {value: '{}', deps:[]};
+        var args = this.walkList(node.args);
+        var attrs = node.attrs ? this.walkNode(node.attrs) : {value: '{}', deps:[]};
         
-        var block = node.block ? walkTags(node.block) : null;
+        var block = node.block ? this.walkTags(node.block) : null;
         var children_js = block ? __wrap_children(block) : __wrap_f('');
         
-        return [id, util.format('var n_%d=driver.mixincall(s,%s,%s,"%s",[%s],%s);',id,parent_js,children_js,node.id,args.values.join(','),attrs.value)];
+        return [id, util.format('var n_%d=d.mixincall(s,%s,%s,"%s",[%s],%s);',id,parent_js,children_js,node.id,args.values.join(','),attrs.value)];
     },
     
     walkMixinCallArgument: function (node) {
-        var expr = walkNode(node.expr);
+        var expr = this.walkNode(node.expr);
         return {
             value: util.format('{id:"%s",expr:%s,deps:[%s]}', node.id||'', expr.value,__deps(expr.deps)),
             deps: expr.deps
@@ -397,34 +451,34 @@ var generator = {
         var id = __gen_id();
         var parent_js = __wrap_f('n_'+parent_id);
         
-        return [id, util.format('var n_%d=driver.mixinblock(s,%s);',id, parent_js)];
+        return [id, util.format('var n_%d=d.mixinblock(s,%s);',id, parent_js)];
     },
     
     /** Text and Tags **/
     
     walkText: function (node, parent_id) {
         var id = __gen_id();
-        var value = walkNode(node.text);
+        var value = this.walkNode(node.text);
         var value_js = value.value;
         if (value.deps.length) {
             value_js = __wrap(value.value);
         }
         var parent_js = __wrap_f('n_'+parent_id);
         
-        return [id, util.format('var n_%d=driver.text(s,%s,%s,[%s]);',id,parent_js,value_js,__deps(value.deps))];
+        return [id, util.format('var n_%d=d.text(s,%s,%s,[%s]);',id,parent_js,value_js,__deps(value.deps))];
     },
     
     walkTag: function (node, parent_id) {
         var id = __gen_id();
-        var tags = node.block ? walkTags(node.block, id) : null;
-        var attrs = walkNode(node.attrs);
-        var decors = node.decorators ? walkList(node.decorators, id) : null;
+        var tags = node.block ? this.walkTags(node.block, id) : null;
+        var attrs = this.walkNode(node.attrs);
+        var decors = node.decorators ? this.walkList(node.decorators, id) : null;
         
         var children_js = __wrap_children(tags);
         var parent_js = __wrap_f('n_'+parent_id);
         var decors_js = decors?decors.values.join(','):'';
         
-        return [id, util.format('var n_%d=driver.tag(s,%s,%s,"%s",%s,[%s],[%s]);',id,parent_js,children_js,node.tag,attrs.value,decors_js,__deps(attrs.deps))];
+        return [id, util.format('var n_%d=d.tag(s,%s,%s,"%s",%s,[%s],[%s]);',id,parent_js,children_js,node.tag,attrs.value,decors_js,__deps(attrs.deps))];
     },
     
     walkTagAttributes: function (node) {
@@ -435,7 +489,7 @@ var generator = {
         
         if (node.attrs) {
             for (var i = 0; i < node.attrs.length; i++) {
-                var attr = walkNode(node.attrs[i]);
+                var attr = this.walkNode(node.attrs[i]);
                 attrs_deps = attrs_deps.concat(attr.deps);
 
                 if (node.attrs[i].type === 'TagAttribute') {
@@ -447,7 +501,7 @@ var generator = {
 
             if (node.attrs.length) {
                 if (attrs_objects.length) {
-                    attrs_js = util.format('driver.util.extend({%s},%s)', attrs_items.join(','), attrs_objects.join(', '));
+                    attrs_js = util.format('d.util.extend({%s},%s)', attrs_items.join(','), attrs_objects.join(', '));
                 } else {
                     attrs_js = util.format('{%s}', attrs_items.join(','));
                 }
@@ -467,11 +521,11 @@ var generator = {
     },
     
     walkTagAttribute : function (node) {
-        var value = walkNode(node.value);
+        var value = this.walkNode(node.value);
         var js = value.value;
         
-        if (node.attr === 'style') js = 'driver.util.pp_style(' + js + ')';
-        if (node.attr === 'class') js = 'driver.util.pp_class(' + js + ')';
+        if (node.attr === 'style') js = 'd.util.pp_style(' + js + ')';
+        if (node.attr === 'class') js = 'd.util.pp_class(' + js + ')';
        
         return {
             value: '"' + node.attr + '": ' + js,
@@ -480,7 +534,7 @@ var generator = {
     },
     
     walkDecorator: function (node) {
-        var args = walkList(node.args);
+        var args = this.walkList(node.args);
         return {
             value: util.format('{id:"%s",args:[%s],deps:[%s]}', node.id, args.values.join(','),__deps(args.deps)),
             deps: args.deps
@@ -488,60 +542,13 @@ var generator = {
     },
     
     walkDecoratorArgument: function (node) {
-        var expr = walkNode(node.expr);
+        var expr = this.walkNode(node.expr);
         return {
             value: expr.deps.length ? __wrap(expr.value) : expr.value,
             deps: expr.deps
         };
     }
 };
-
-function walkFile(filename) {
-    var source = fs.readFileSync(filename, 'utf8');
-    return walkTags(parser.parse(source + '\n'), 0);
-}
-
-function walkNode(node) {
-    if (!generator['walk' + node.type]) {
-        console.dir(node);
-        throw new Error('Unknown ' + node.type);
-    }
-    return generator['walk' + node.type].apply(generator, arguments);
-}
-
-function walkTags(nodes, parent) {
-    var value = [];
-    var deps = [];
-    var data;
-    
-    for (var i = 0; i < nodes.length; i++) {
-        data = walkNode(nodes[i], parent);
-        value.push(data);
-        deps.concat(data.deps);
-    }
-    
-    return {
-        values: value,
-        deps: deps
-    };
-}
-
-function walkList(nodes) {
-    var value = [];
-    var deps = [];
-    var data;
-    
-    for (var i = 0; i < nodes.length; i++) {
-        data = walkNode(nodes[i]);
-        value.push(data.value);
-        deps = deps.concat(data.deps);
-    }
-    
-    return {
-        values: value,
-        deps: deps
-    };
-}
 
 function __wrap(value) {
     return 'function(s){return '+value+';}';
@@ -574,26 +581,9 @@ function __gen_id() {
     return arguments.callee.idx += 1;
 }
 
-function generate (filename, saveto) {
-    var val = walkFile(filename);
-    var items = [];
-    var ids = [];
-    for (var i = 0; i < val.values.length; i++) {
-        items.push(val.values[i][1]);
-        ids.push(val.values[i][0]);
-    }
+module.exports.Compiler = Compiler;
+module.exports.compile = function () {
+    var compiler = new this.Compiler(parser);
     
-    var src = util.format('template.add("%s", function(s,driver){%s; return [n_%s];});', filename, items.join(''), ids.join(',n_'));
-    
-    fs.writeFile(saveto, src, function(err) {
-        if(err) {
-            return console.error(err);
-        }
-    }); 
-}
-
-if (!process.argv[2] || !process.argv[3]) {
-    throw 'No file provided!';
-} else {
-    generate(process.argv[2], process.argv[3]);
-}
+    return compiler.compile.apply(compiler, arguments);
+};
