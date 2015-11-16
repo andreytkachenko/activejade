@@ -3,7 +3,7 @@ module.exports = function (grunt) {
         jison: {
             target : {
                 files: {
-                    'dist/parser.js': ['src/parser.y', 'src/lexer.l']
+                    'dist/parser.js': ['lib/parser.y', 'lib/lexer.l']
                 }
             }
         }

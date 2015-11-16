@@ -2,7 +2,10 @@
   "name": "activejade",
   "version": "1.0.1",
   "description": "ActiveJade is a variant of original Jade(jade-lang.com) project aimed to work properly with MVVM frameworks",
-  "main": "Gruntfile.js",
+  "main": "lib/index.js",
+  "bin": {
+    "activejade": "bin/activejade.js"
+  },
   "scripts": {
     "test": "test"
   },
@@ -25,5 +28,8 @@
     "grunt": "^0.4.5",
     "grunt-cli": "^0.1.13",
     "grunt-jison": "^1.3.2"
+  },
+  "dependencies": {
+    "extend": "^3.0.0"
   }
 }
