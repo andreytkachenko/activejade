@@ -150,6 +150,7 @@ NL                      (?![a-zA-Z0-9_$])
 %s for-each if-while
 %s mixin mixin-args mixin-call
 %s block include include-filter filter decorator
+%s doctype
 
 %%
 
@@ -382,6 +383,9 @@ NL                      (?![a-zA-Z0-9_$])
 <decorator>{WS}+            /* ignore */
 <decorator>\n               ctx.leave(1, 0);
 
+<doctype>\n                 ctx.leave(1, 0);
+<doctype>[^]                return 'DOCTYPE';
+
 <INITIAL>\n{WS}*\n          this.unput('\n');
 <INITIAL>\n{WS}*            {
                                 var indent = ctx._indent;
@@ -417,6 +421,7 @@ NL                      (?![a-zA-Z0-9_$])
 \:                          ctx.enter('filter'); return 'FILTER_TAG';
 \@                          ctx.enter('decorator', 0);
 
+doctype{NL}                 ctx.enter('doctype', 0);
 mixin{NL}                   ctx.enter('mixin', 0);
 block{NL}                   ctx.enter('block', 0);
 superblock{NL}              return 'SUPERBLOCK';

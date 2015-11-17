@@ -33,6 +33,12 @@ program-line
     : line
     | extends
     | mixin
+    | doctype
+    ;
+
+doctype
+    : DOCTYPE
+        { $$ = new yy.$.DoctypeNode($1); }
     ;
 
 line
