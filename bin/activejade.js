@@ -1,4 +1,4 @@
-var compiler = require('src/compiler');
+var compiler = require('../lib/compiler.js');
 var fs = require('fs');
 
 function compile_file(file_name, name, callback_name) {
