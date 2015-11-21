@@ -1,6 +1,6 @@
 {
   "name": "activejade",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "ActiveJade is a variant of original Jade(jade-lang.com) project aimed to work properly with MVVM frameworks",
   "main": "lib/index.js",
   "bin": {
