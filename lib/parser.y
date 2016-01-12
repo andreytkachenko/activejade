@@ -104,14 +104,14 @@ text-string
 
 text-line
     : text-string NEWLINE
-        { $1.addString('\n'); $$ = $1 }
+        { $1.addString('\n'); $$ = new yy.$.TextNode($1) }
     ;
 
 text
     : text-line
-        { $$ = new yy.$.TextNode($1); }
+        { $$ = $1; }
     | TEXT_TAG text-line
-        { $$ = new yy.$.TextNode($2); }
+        { $$ = $2; }
     | text-expr NEWLINE
         { $$ = new yy.$.TextNode($1); }
     ;
@@ -128,11 +128,19 @@ text-block
         { $$ = $2; }
     ;
 
+with-expr
+    : object
+    ;
+
 include
     : INCLUDE expr NEWLINE
         { $$ = new yy.$.IncludeNode($2); }
+    | INCLUDE expr WITH with-expr NEWLINE
+        { $$ = new yy.$.IncludeNode($2, $4); }
     | INCLUDE FILTER_TAG ID expr NEWLINE
-        { $$ = new yy.$.IncludeNode($4, $3); }
+        { $$ = new yy.$.IncludeNode($4, null, $3); }
+    | INCLUDE FILTER_TAG ID expr WITH with-expr NEWLINE
+        { $$ = new yy.$.IncludeNode($4, $5, $3); }
     ;
 
 extends
@@ -372,6 +380,8 @@ tag-tail
     | text block
         { $$ = [$1].concat($2); }
     | ':' tag
+        { $$ = [$2]; }
+    | ':' mixin-call
         { $$ = [$2]; }
     | '/' NEWLINE
         { $$ = null; }
@@ -672,7 +682,9 @@ sub-expr
     | sub-expr '(' args-list ')'
         { $$ = new yy.$.FunctionCallOpNode($1, $3); }
     | sub-expr '.' ID
-        { $$ = new yy.$.PropertyOpNode($1, $3); }
+        { $$ = new yy.$.PropertyOpNode($1, $3, false); }
+    | sub-expr '?.' ID
+        { $$ = new yy.$.PropertyOpNode($1, $3, true); }
     | sub-expr '[' expr ']'
         { $$ = new yy.$.IndexOpNode($1, $3); }
     | sub-expr '[' slice-expr ']'

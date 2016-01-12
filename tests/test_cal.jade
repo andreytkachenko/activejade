@@ -1,0 +1,48 @@
+.jd-calendar
+    .jd-calendar-container
+        .header
+            @onClick(cal.prevMonth())
+            .arrow.left
+
+            .title
+                @onClick(cal.cycleMode('months', 'month'))
+                .month= cal.current.format('MMMM')
+
+                @onClick(cal.cycleMode('years', 'month'))
+                .year= cal.current.format('YYYY')
+
+            @onClick(cal.nextMonth())
+            .arrow.right
+
+        .body
+            case cal.mode
+                when 'months'
+                    .months
+                        for month in cal.months
+                            .month-title
+                                @onClick( cal.setCurrentMonth(month) )
+                                span= month.format('MMMM')
+                when 'month'
+                    .month
+                        .week-titles
+                            for week in cal.weeks
+                                .week-title= week.format('dd')
+
+                        for weekdays in cal.calendar
+                            .week
+                                for day in weekdays
+                                    .day
+                                        @onClick(cal.select(day))
+                                        span( class = {
+                                            selected: cal.isSelected(day),
+                                            now: cal.isCurrent(day),
+                                            current: cal.isSameMonth(day)
+                                        } )= day.format('D')
+                when 'years'
+                    .years
+                        for year in cal.years
+                            .year-title
+                                @onClick(cal.setCurrentYear(year))
+                                span= year.format('YYYY')
+            
+                

@@ -96,7 +96,7 @@
                 ~toks.indexOf(prevTok) && ~toks.indexOf(token) ||
                 ~brace.indexOf(prevTok) && ~toks.indexOf(token) ||
                 prevTok === '}' && token === '(' ||
-                ~toks.indexOf(prevTok) && token === '{' || 
+                ~toks.indexOf(prevTok) && token === '{' ||
                 ~internal.indexOf(token)
             ) {
                 result = false;
@@ -112,7 +112,7 @@
 
     function inBraces() {
         var state = self._ctx.state().state
-        
+
         return state.cbrace || state.bbrace || state.tbrace || state.invar;
     }
 
@@ -142,7 +142,7 @@ ASSIGN                  \>\>\>\=|\<\<\<\=|\|\=|&\=|\+\=|\-\=|\*\=|\/\=|%\=|\>\>\
 OPERATORS               \+\+|\-\-|\.\.|[!~\[\]\(\)\{\},>.<+/*&%:?^|-]
 NL                      (?![a-zA-Z0-9_$])
 
-%s number string string-body text-block comment comment-line comment-block 
+%s number string string-body text-block comment comment-line comment-block
 %s simplestring simplestring-body
 %s interp tag-interp tag-interp-body
 %s expr expr-body
@@ -165,7 +165,7 @@ NL                      (?![a-zA-Z0-9_$])
                                 var last = yytext.charAt(yyleng-1);
                                 var quote = ctx._quote[0];
                                 var preLast = yyleng > 0 ? yytext.charAt(yyleng-2) : quote;
-                                
+
                                 switch (true) {
                                     default:
                                     case preLast === '\\':
@@ -229,9 +229,10 @@ NL                      (?![a-zA-Z0-9_$])
 <expr-body>null{NL}         if (isExprNotEnd('NULL')) return 'NULL';
 <expr-body>true{NL}         if (isExprNotEnd('TRUE')) return 'TRUE';
 <expr-body>false{NL}        if (isExprNotEnd('FALSE')) return 'FALSE';
+<expr-body>{ID}             if (isExprNotEnd('ID')) return 'ID';
 <expr-body>{NUM}            if (isExprNotEnd('NUMBER')) ctx.enter('number', 0);
 <expr-body>{STRING}         if (isExprNotEnd('STRING')) ctx.enter('string', 0);
-<expr-body>{ID}             if (isExprNotEnd('ID')) return 'ID';
+<expr-body>"?."             if (isExprNotEnd(yytext)) return yytext;
 <expr-body>{EQUAL}          if (isExprNotEnd(yytext)) return yytext;
 <expr-body>{ASSIGN}         if (isExprNotEnd(yytext)) return yytext;
 <expr-body>\;               if (isExprNotEnd(yytext)) return yytext;
@@ -366,11 +367,12 @@ NL                      (?![a-zA-Z0-9_$])
 <if-while>\n                ctx.leave(1, 0);
 
 <include>"include"          return 'INCLUDE';
+<include>"with"             return 'WITH';
 <include>"extends"          ctx.enter('expr'); return 'EXTENDS';
 <include>":"                ctx.enter('include-filter');return 'FILTER_TAG';
 <include>{WS}+              /* ignore */
 <include>\n                 ctx.leave(1, 0);
-<include>[^]                ctx.enter('expr', 0); 
+<include>[^]                ctx.enter('expr', 0);
 <include-filter>{WS}+       /* ignore */
 <include-filter>{ID}        ctx.leave();return 'ID';
 

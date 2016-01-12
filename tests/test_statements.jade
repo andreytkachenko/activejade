@@ -1,0 +1,18 @@
+#test
+    - xxx = './test_tag.jade'; 
+    = 1+2+3+4+5+6
+    - ttt = 5;
+    while ttt
+        ll= ttt
+        - ttt--
+    if test1
+        if test2
+            if test3
+                for test5 in test4
+                    include xxx with {
+                        i: test5
+                    }
+        else
+            span Ooops
+    else
+        span Nothing

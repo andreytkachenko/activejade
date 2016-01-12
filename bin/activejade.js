@@ -1,35 +1,66 @@
+var Parser = require('commandline-parser').Parser;
 var compiler = require('../lib/compiler.js');
 var fs = require('fs');
 
-function compile_file(file_name, name, callback_name) {
-    var source = fs.readFileSync(file_name, 'utf8');
-    return compiler.compile(source, name, callback_name);
+var parser = new Parser({
+	name : "activejade",
+	desc : 'Compile Jade templates to javascript templates',
+    arguments : {
+        generate: {
+    		desc : 'Generate file type ("common", "amd" or "callback") default is "common"',
+            flags: ['generate', 'g'],
+            optional : true
+        },
+        callback: {
+            desc : 'Callback name for generation type "callback"',
+            flags: ['callback', 'c'],
+            optional: true
+        },
+        output: {
+            desc : 'Output file name',
+            flags: ['output', 'o'],
+            optional: false
+        }
+    }
+});
+
+parser.exec();
+
+var context = {
+    type: parser.get('generate') || "common",
+    callback: parser.get('callback'),
+    output: parser.get('output'),
+    input: parser.getArguments().slice(1)
 }
 
-if (!process.argv[2] || !process.argv[3]) {
-    throw 'No file provided!';
-} else {
-    var callback_name = process.argv[4] || 'template.add';
-    var value = eval(process.argv[2]);
-    var files = [];
-    
-    if (typeof value === 'string') {
-        files.push(compile_file(value, value, callback_name));
-    } else if (typeof value === 'object') {
-        if (value instanceof Array) {
-            for (var i = 0; i < value.length; i++) {
-                files.push(compile_file(value[i], value[i], callback_name));
-            }
-        } else {
-            for (var i in value) {
-                files.push(compile_file(value[i], i, callback_name));
-            }
-        }
-    } else {
-        throw new Error('No files provided');
-    }
-    
-    fs.writeFile(process.argv[3], files.join(';'), function(err) {
-        if(err) { return console.error(err); }
-    }); 
+if (!context.output) {
+    throw new Error('Output parameter is missing!');
 }
+
+if (!context.input.length) {
+    throw new Error('No input files!');
+}
+
+if (!~['callback', 'common', 'amd'].indexOf(context.type)) {
+    throw new Error('Unknown generation type "' + context.type + '"!');
+}
+
+if (context.type === "callback" && !context.callback) {
+    throw new Error('Callback is missing for callback type!');
+}
+
+function compile_files(input) {
+    var files = [];
+    for (var i = 0; i < input.length; i++) {
+        var source = fs.readFileSync(input[i], 'utf8');
+        files.push( compiler.compile(source, input[i], context.type, context.callback) );
+    }
+
+    return files;
+}
+
+fs.writeFile(context.output, compile_files(context.input).join(';'), function(err) {
+    if(err) {
+        return console.error(err);
+    }
+});
