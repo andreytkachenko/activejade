@@ -45,7 +45,7 @@ line
     : tag
     | if
     | while
-    | for-in
+    | for-in-if
     | case
     | include
     | extend-block
@@ -53,7 +53,7 @@ line
     | expr-statement
     | filter
     | comment
-    | mixin-call
+    | mixin-call-decorated
     | YIELD NEWLINE
         { $$ = new yy.$.MixinYieldNode(); }
     | BLOCK NEWLINE
@@ -193,10 +193,17 @@ if
     ;
 
 for-in
-    : EACH ID IN expr NEWLINE block
-        { $$ = new yy.$.ForInNode($2, null, $4, $6); }
-    | EACH ID ',' ID IN expr NEWLINE block
-        { $$ = new yy.$.ForInNode($2, $4, $6, $8); }
+    : EACH ID IN expr
+        { $$ = [ $4, $2 ] }
+    | EACH ID ',' ID IN expr
+        { $$ = [ $6, $4, $2 ] }
+    ;
+
+for-in-if
+    : for-in NEWLINE block
+        { $$ = new yy.$.ForInIfNode($1[0], $1[1], $1[2], $3); }
+    | for-in IF expr NEWLINE block
+        { $$ = new yy.$.ForInIfNode($1[0], $1[1], $1[2], $5, $3); }
     ;
 
 when-block
@@ -259,9 +266,9 @@ mixin-args
     ;
 
 mixin
-    : MIXIN ID NEWLINE block
+    : MIXIN MIXINNAME NEWLINE block
         { $$ = new yy.$.MixinNode($2, [], $4); }
-    | MIXIN ID mixin-args NEWLINE block
+    | MIXIN MIXINNAME mixin-args NEWLINE block
         { $$ = new yy.$.MixinNode($2, $3, $5); }
     ;
 
@@ -284,14 +291,20 @@ mixin-simple-call
     ;
 
 mixin-call
-    : CALL ID NEWLINE
+    : CALL MIXINNAME NEWLINE
         { $$ = new yy.$.MixinCallNode($2, [], null, null); }
-    | CALL ID NEWLINE block
+    | CALL MIXINNAME NEWLINE block
         { $$ = new yy.$.MixinCallNode($2, [], null, $4); }
-    | CALL ID mixin-simple-call tag-unnamed
+    | CALL MIXINNAME mixin-simple-call tag-unnamed
         { $$ = new yy.$.MixinCallNode($2, $3, $4[0], $4[1]); }
-    | CALL ID mixin-simple-call NEWLINE
+    | CALL MIXINNAME mixin-simple-call NEWLINE
         { $$ = new yy.$.MixinCallNode($2, $3, null, null); }
+    ;
+
+mixin-call-decorated
+    : mixin-call
+    | decorators mixin-call
+        { $2.setDecorators($1); $$ = $2; }
     ;
 
 tag-head-attr
@@ -379,7 +392,7 @@ tag-tail
         { $$ = [$1]; }
     | text block
         { $$ = [$1].concat($2); }
-    | ':' tag
+    | ':' tag-undecorated
         { $$ = [$2]; }
     | ':' mixin-call
         { $$ = [$2]; }
@@ -502,6 +515,11 @@ binary
         { $$ = new yy.$.BinaryOpNode('&', $1, $3); }
     | expr '^' expr
         { $$ = new yy.$.BinaryOpNode('^', $1, $3); }
+
+    | expr '||' expr
+        { $$ = new yy.$.BinaryOpNode('||', $1, $3); }
+    | expr '&&' expr
+        { $$ = new yy.$.BinaryOpNode('&&', $1, $3); }
 
     | expr '>' expr
         { $$ = new yy.$.BinaryOpNode('>', $1, $3); }

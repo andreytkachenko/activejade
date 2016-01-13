@@ -136,10 +136,11 @@ CLASS                   [a-zA-Z_][a-zA-Z0-9_-]*
 STRING                  \"|\'
 NUM                     [0-9]
 ID                      [$a-zA-Z_][$a-zA-Z0-9_]*
+MIXINNAME               [$a-zA-Z_][$a-zA-Z0-9_-]*
 WS                      [ \t]
 EQUAL                   \=\=\=|\=\=|\>\>\>|\<\<\<|\!\=\=|\=\=|\!\=|\>\=|\<\=|\>\>|\<\<
 ASSIGN                  \>\>\>\=|\<\<\<\=|\|\=|&\=|\+\=|\-\=|\*\=|\/\=|%\=|\>\>\=|\<\<\=|\^\=|\=
-OPERATORS               \+\+|\-\-|\.\.|[!~\[\]\(\)\{\},>.<+/*&%:?^|-]
+OPERATORS               \&\&|\|\||\+\+|\-\-|\.\.|[!~\[\]\(\)\{\},>.<+/*&%:?^|-]
 NL                      (?![a-zA-Z0-9_$])
 
 %s number string string-body text-block comment comment-line comment-block
@@ -292,7 +293,7 @@ NL                      (?![a-zA-Z0-9_$])
 <comment-block>[^]          ctx.enter('comment-line', 0);
 
 <mixin>"mixin"              return 'MIXIN';
-<mixin>{ID}                 return 'ID';
+<mixin>{MIXINNAME}          return 'MIXINNAME';
 <mixin>"("                  ctx.enter('mixin-args', 0);
 <mixin>\n                   ctx.leave(1, 0);
 <mixin-args>"..."           return 'ELLIPSIS';
@@ -301,7 +302,7 @@ NL                      (?![a-zA-Z0-9_$])
 <mixin-args>","             return ',';
 <mixin-args>{ID}            return 'ID';
 
-<mixin-call>{ID}            return 'ID';
+<mixin-call>{MIXINNAME}     return 'MIXINNAME';
 <mixin-call>"("             ctx.enter('expr');return '(';
 <mixin-call>")"             ctx.replace('tag-body');return ')';
 <mixin-call>","             ctx.enter('expr');return ',';
@@ -318,6 +319,7 @@ NL                      (?![a-zA-Z0-9_$])
 <for-each>"each"            return 'EACH';
 <for-each>","               return ',';
 <for-each>in{NL}            ctx.enter('expr');return 'IN';
+<for-each>if{NL}            ctx.enter('expr');return 'IF';
 <for-each>{ID}              return 'ID';
 <for-each>\n                ctx.leave(1, 0);
 
