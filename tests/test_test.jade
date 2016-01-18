@@ -1,0 +1,28 @@
+if test1
+    div#test1_true Test1 True
+    if test2
+        div#test1_true-test2_true Test2 True
+        if test3
+            div#test1_true-test2_true-test3_true Test3 True
+        else
+            div#test1_true-test2_true-test3_false Test3 False
+    else
+        div#test1_true-test2_false Test2 False
+        if test3
+            div#test1_true-test2_false-test3_true Test3 True
+        else
+            div#test1_true-test2_false-test3_false Test3 False
+else
+    div#test1_false Test1 False
+    if test2
+        div#test1_false-test2_true Test2 True
+        if test3
+            div#test1_false-test2_true-test3_true Test3 True
+        else
+            div#test1_false-test2_true-test3_false Test3 False
+    else
+        div#test1_false-test2_false Test2 False
+        if test3
+            div#test1_false-test2_false-test3_true Test3 True
+        else
+            div#test1_false-test2_false-test3_false Test3 False

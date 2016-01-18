@@ -8,8 +8,7 @@ module.exports = function (grunt) {
             }
         }
     });
-
     grunt.loadNpmTasks('grunt-jison');
-
+    
     grunt.registerTask('default', ['jison']);
 };

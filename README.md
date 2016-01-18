@@ -16,7 +16,10 @@ The compiler compiles jade template into JS file instead HTML, and you can link 
 1. Extends, Blocks
 2. Filters, IncludeFilters
 3. AngularJs ecosystem integration
-4. `break` and `continue` statements
+4. Tests: port from original Jade and tests to check proper DOM manipulations
+
+### Plans in Future
+1. `break` and `continue` statements
 
 ## Differences Between Original Jade
 1. It's parser and lexer completely rewritten based on `Jison`

@@ -1,17 +1,17 @@
 .jd-calendar
     .jd-calendar-container
         .header
-            @onClick(cal.prevMonth())
+            @on('click', cal.prevMonth())
             .arrow.left
 
             .title
-                @onClick(cal.cycleMode('months', 'month'))
+                @on('click', cal.cycleMode('months', 'month'))
                 .month= cal.current.format('MMMM')
 
-                @onClick(cal.cycleMode('years', 'month'))
+                @on('click', cal.cycleMode('years', 'month'))
                 .year= cal.current.format('YYYY')
 
-            @onClick(cal.nextMonth())
+            @on('click', cal.nextMonth())
             .arrow.right
 
         .body
@@ -20,7 +20,7 @@
                     .months
                         for month in cal.months
                             .month-title
-                                @onClick( cal.setCurrentMonth(month) )
+                                @on('click', cal.setCurrentMonth(month) )
                                 span= month.format('MMMM')
                 when 'month'
                     .month
@@ -32,7 +32,7 @@
                             .week
                                 for day in weekdays
                                     .day
-                                        @onClick(cal.select(day))
+                                        @on('click', cal.select(day))
                                         span( class = {
                                             selected: cal.isSelected(day),
                                             now: cal.isCurrent(day),
@@ -42,7 +42,7 @@
                     .years
                         for year in cal.years
                             .year-title
-                                @onClick(cal.setCurrentYear(year))
+                                @on('click', cal.setCurrentYear(year))
                                 span= year.format('YYYY')
             
                 
