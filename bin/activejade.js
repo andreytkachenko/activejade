@@ -1,5 +1,5 @@
 var Parser = require('commandline-parser').Parser;
-var compiler = require('../lib/compiler.js');
+var compiler = require('../lib/index');
 var fs = require('fs');
 
 var parser = new Parser({
@@ -50,16 +50,13 @@ if (context.type === "callback" && !context.callback) {
 }
 
 function compile_files(input) {
-    var files = [];
-    for (var i = 0; i < input.length; i++) {
-        var source = fs.readFileSync(input[i], 'utf8');
-        files.push( compiler.compile(source, input[i], context.type, context.callback) );
-    }
-
-    return files;
+    return compiler.compileFIles(input, {
+        type: context.type,
+        callbac_name: context.callback
+    });
 }
 
-fs.writeFile(context.output, compile_files(context.input).join(';'), function(err) {
+fs.writeFile(context.output, compile_files(context.input), function(err) {
     if(err) {
         return console.error(err);
     }

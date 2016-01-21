@@ -1,6 +1,8 @@
 div
     span!= test.toString()
     case test.length
+        when 0
+            - 1
         when 1
             span One
         when 2

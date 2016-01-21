@@ -7,6 +7,29 @@ var serializeDocument = require("jsdom").serializeDocument;
 var htmltidy = require('htmltidy').tidy;
 var fork = require('child_process').fork;
 
+process.on('uncaughtException', function (exception) {
+  console.log(exception);
+});
+
+var printTree = function (tree) {
+    var cache = [];
+    console.log(JSON.stringify(tree, function(key, value) {
+        if (key === '_cache' || key === '$') {
+            return undefined;
+        }
+        if (typeof value === 'object' && value !== null) {
+            if (cache.indexOf(value) !== -1) {
+                return '#id=' + value.id;
+            }
+            cache.push(value);
+        }
+
+        return value;
+    }, 2));
+
+    cache = null;
+}
+
 var watching = {};
 var generator = new BaseGenerator({
     templateManager: template,
@@ -28,7 +51,6 @@ var compile = function (name, deps, callback, reject) {
         })
     }
     files.push('./tests/'+name+'.jade');
-
     var exe = fork('bin/activejade.js', ['-o', './tests/compiled/'+name+'.js'].concat(files));
     exe.on('exit', (code) => {
         if (!code)
@@ -42,9 +64,20 @@ var load = function(name, deps) {
     var deffered = Promise.defer();
 
     compile(name, deps, function () {
-        var tpl = require('../tests/compiled/' + name);
-        template.add( tpl.FILE_NAME, tpl.template );
-        deffered.resolve({file: tpl.FILE_NAME, name: name});
+        var tpls = require('../tests/compiled/' + name);
+        var tpl_name;
+        tpls.forEach(function (tpl) {
+            template.add( tpl.FILE_NAME, tpl.TEMPLATE );
+            if (~tpl.FILE_NAME.indexOf(name)) {
+                tpl_name = tpl.FILE_NAME;
+            }
+        });
+
+        if (tpl_name) {
+            deffered.resolve({file: tpl_name, name: name});
+        } else {
+            deffered.reject();
+        }
     }, deffered.reject);
 
     return deffered.promise;
@@ -66,7 +99,7 @@ var wrap = function (value) {
 
 var assert = function (expected, actual) {
     if (expected !== actual) {
-        console.error('--------Error:--------\n');
+        console.log('--------Error:--------\n');
         console.log(expected, '\n');
         console.log(actual, '\n');
         console.log('----------------------');
@@ -74,6 +107,22 @@ var assert = function (expected, actual) {
 }
 
 var context = {
+    test_mixin: function (scope, tpl) {
+        // scope.test = false;
+        // var tree = tpl(scope, generator);
+        //
+        // var doc = jsdom("<html><body></body></html>");
+        // var window = doc.defaultView;
+        //
+        // var eee = domGenerator(tree, window.document, function (xxx) {
+        //     xxx(window.document.body);
+        // });
+        //
+        // assert('<div id="root"></div>', htmlGenerator(tree));
+        // setElements(window.document.body, eee);
+        // assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+    },
+
     test_include: function (scope, tpl) {
         scope.test = false;
         var tree = tpl(scope, generator);
@@ -84,6 +133,82 @@ var context = {
         var eee = domGenerator(tree, window.document, function (xxx) {
             xxx(window.document.body);
         });
+
+        assert('<div id="root"></div>', htmlGenerator(tree));
+        setElements(window.document.body, eee);
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [1,2,3];
+        trigger('test');
+        assert('<div id="root"><div>1</div><div>2</div><div>3</div></div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [3,2,1];
+        trigger('test');
+        assert('<div id="root"><div>3</div><div>2</div><div>1</div></div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+    },
+
+    test_casewhen: function (scope, tpl) {
+        scope.test = [];
+        var tree = tpl(scope, generator);
+
+        var doc = jsdom("<html><body></body></html>");
+        var window = doc.defaultView;
+
+        var eee = domGenerator(tree, window.document, function (xxx) {
+            xxx(window.document.body);
+        });
+
+        assert('<div><span></span></div>', htmlGenerator(tree));
+        setElements(window.document.body, eee);
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [ 1 ];
+        trigger('test');
+        assert('<div><span>1</span><span> One\n</span></div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [ 1, 1 ];
+        trigger('test');
+        assert('<div><span>1,1</span><span> Two\n</span></div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [ 1, 1, 1, 1, 1 ];
+        trigger('test');
+        assert('<div><span>1,1,1,1,1</span><span> Five or Six\n</span></div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [ 1, 1, 1, 1, 1, 1, 1, 1 ];
+        trigger('test');
+        assert('<div><span>1,1,1,1,1,1,1,1</span><span> Others\n</span></div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+    },
+
+    test_while: function (scope, tpl) {
+        scope.test = false;
+        var tree = tpl(scope, generator);
+
+        var doc = jsdom("<html><body></body></html>");
+        var window = doc.defaultView;
+
+        var eee = domGenerator(tree, window.document, function (xxx) {
+            xxx(window.document.body);
+        });
+
+        assert('<h1 id="x2"> No records\n</h1>', htmlGenerator(tree));
+        setElements(window.document.body, eee);
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [];
+        trigger('test');
+        assert('<h1 id="x1"> Hello, this is a while test\n</h1>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [1,2,3,4];
+        trigger('test');
+        assert('<h1 id="x1"> Hello, this is a while test\n</h1><div id="x3">1</div><div id="x3">3</div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
     },
 
     test_forin: function (scope, tpl) {
@@ -97,18 +222,18 @@ var context = {
             xxx(window.document.body);
         });
 
-        assert('<h1> No records\n</h1>', htmlGenerator(tree));
+        assert('<h1 id="x2"> No records\n</h1>', htmlGenerator(tree));
         setElements(window.document.body, eee);
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
 
         scope.test = [];
         trigger('test');
-        assert('<h1> Hello, this is a for-in test\n</h1>', htmlGenerator(tree));
+        assert('<h1 id="x1"> Hello, this is a for-in test\n</h1>', htmlGenerator(tree));
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
 
         scope.test = [1,2,3,4];
         trigger('test');
-        assert('<h1> Hello, this is a for-in test\n</h1><div>0\n</div><div>2\n</div>', htmlGenerator(tree));
+        assert('<h1 id="x1"> Hello, this is a for-in test\n</h1><div id="x3">1</div><div id="x3">3</div>', htmlGenerator(tree));
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
     },
 
@@ -153,12 +278,15 @@ var context = {
 
 Promise.all([
     load('test_test'),
+    load('test_while'),
     load('test_forin'),
     load('test_include', ['include/test1.jade']),
+    load('test_casewhen'),
+    load('test_mixin')
 ]).then(function (data) {
     data.forEach(function (p) {
-        console.log('testing ', p.name);
         watching = {};
         context[p.name]({}, template.get( p.file ));
+        console.log('testing ', p.name);
     })
 });
