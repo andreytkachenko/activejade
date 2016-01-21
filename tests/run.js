@@ -108,19 +108,31 @@ var assert = function (expected, actual) {
 
 var context = {
     test_mixin: function (scope, tpl) {
-        // scope.test = false;
-        // var tree = tpl(scope, generator);
-        //
-        // var doc = jsdom("<html><body></body></html>");
-        // var window = doc.defaultView;
-        //
-        // var eee = domGenerator(tree, window.document, function (xxx) {
-        //     xxx(window.document.body);
-        // });
-        //
-        // assert('<div id="root"></div>', htmlGenerator(tree));
-        // setElements(window.document.body, eee);
-        // assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+        scope.test = false;
+        var tree = tpl(scope, generator);
+
+        var doc = jsdom("<html><body></body></html>");
+        var window = doc.defaultView;
+
+        var eee = domGenerator(tree, window.document, function (xxx) {
+            xxx(window.document.body);
+        });
+
+        assert('<div></div>', htmlGenerator(tree));
+        setElements(window.document.body, eee);
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [1,2,3];
+        trigger('test');
+        assert('<div><div>1</div><div>1 Bob\n</div><div>1<span> Bob\n</span></div><div>2</div><div>2 Bob\n</div><div>2<span> Bob\n</span></div><div>3</div><div>3 Bob\n</div><div>3<span> Bob\n</span></div></div>',
+                htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [4,3,2];
+        trigger('test');
+        assert('<div><div>4</div><div>4 Bob\n</div><div>4<span> Bob\n</span></div><div>3</div><div>3 Bob\n</div><div>3<span> Bob\n</span></div><div>2</div><div>2 Bob\n</div><div>2<span> Bob\n</span></div></div>',
+                htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
     },
 
     test_include: function (scope, tpl) {

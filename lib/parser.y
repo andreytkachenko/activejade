@@ -18,6 +18,8 @@
 program
     : program-lines EOF
         { return $1; }
+    | NEWLINE program-lines EOF
+        { return $2; }
     | NEWLINE EOF
         { return []; }
     ;

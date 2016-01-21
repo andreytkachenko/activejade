@@ -1,6 +1,13 @@
-mixin test(x)
+mixin test0(x)
     div= x
+
+mixin test1(x)
+    div= x
+        block
 
 div
     for i in test
-        +test(i)
+        +test0(i)
+        +test1(i) Bob
+        +test1(i)
+            span Bob
