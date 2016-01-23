@@ -112,6 +112,14 @@ var assert = function (expected, actual) {
 }
 
 var context = {
+    test_tag: function (scope, tpl) {
+        var tree = tpl(scope, generator);
+        assert('<div></div><div id="id"></div><div class="class"></div><div attr="value"></div><div test="test"></div><div> Text\n\
+</div><div><div></div></div><div>Text\n\
+</div><div>Hi this is\n\
+Few lines of text\n\
+</div><div></div><div class="test1 test2 test3"></div>', htmlGenerator(tree));
+    },
     test_method: function (scope, tpl) {
         scope.test = false;
         var tree = tpl(scope, generator);
@@ -364,6 +372,7 @@ var context = {
             'test.com': 'www.test.com',
             'example.ru': 'www.example.ru'
         });
+        
         setTimeout(function () {
             assert(
                 '<html><head></head><body><div><span> Test ready!\n</span></div><div><a href="test.com">www.test.com</a><a href="example.ru">www.example.ru</a></div></body></html>',
@@ -373,6 +382,7 @@ var context = {
 };
 
 Promise.all([
+    load('test_tag'),
     load('test_method'),
     load('test_ifelse'),
     load('test_while'),

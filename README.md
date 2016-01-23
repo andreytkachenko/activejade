@@ -11,6 +11,7 @@ The compiler compiles jade template into JS file instead HTML, and you can link 
 3. Decorators
 4. Include
 5. IfElse, While, ForIn, CaseWhen
+6. References and promises
 
 ### In Progress
 1. Extends, Blocks
@@ -28,6 +29,14 @@ The compiler compiles jade template into JS file instead HTML, and you can link 
     * euclid operator `?.` (i.e. `a.b?.c` => `(a.b||{}).c` )
     * slicing operator `[:]` (i.e. `[ 1, 2, 3, 4 ][1:2]` => `[ 2, 3 ]`)
     * different behavior of `var` operator
+    * may have `#element-id` to access to element by id:
+        ```
+            div#test-1
+            ... some code
+            - #test-1.innerHTML = #test-n.innerHTML
+            ... some code
+            div#test-n
+        ```
 3. It has decorators(can be applied to tags or mixin calls):
 ```
 div
@@ -54,4 +63,3 @@ div
 
 ## Standard Decorators
 1. `@on` - to attach event listener to tag element
-2. `@var` - to create local variable (in the scope) with node (not a real DOM element - use varname.$ to access DOM element)
