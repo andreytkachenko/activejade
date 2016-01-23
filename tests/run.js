@@ -112,6 +112,26 @@ var assert = function (expected, actual) {
 }
 
 var context = {
+    test_method: function (scope, tpl) {
+        scope.test = false;
+        var tree = tpl(scope, generator);
+
+        var doc = jsdom("<html><body></body></html>");
+        var window = doc.defaultView;
+
+        var eee = domGenerator(tree, window.document, function (xxx) {
+            xxx(window.document.body);
+        });
+
+        assert('<div>false</div>', htmlGenerator(tree));
+        setElements(window.document.body, eee);
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+
+        scope.test = [1,2,3];
+        trigger('test');
+        assert('<div>1,2,3</div>', htmlGenerator(tree));
+        assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+    },
     test_mixin: function (scope, tpl) {
         scope.test = false;
         var tree = tpl(scope, generator);
@@ -178,28 +198,28 @@ var context = {
             xxx(window.document.body);
         });
 
-        assert('<div><span></span></div>', htmlGenerator(tree));
+        assert('<div></div>', htmlGenerator(tree));
         setElements(window.document.body, eee);
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
 
         scope.test = [ 1 ];
         trigger('test');
-        assert('<div><span>1</span><span> One\n</span></div>', htmlGenerator(tree));
+        assert('<div><span> One\n</span></div>', htmlGenerator(tree));
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
 
         scope.test = [ 1, 1 ];
         trigger('test');
-        assert('<div><span>1,1</span><span> Two\n</span></div>', htmlGenerator(tree));
+        assert('<div><span> Two\n</span></div>', htmlGenerator(tree));
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
 
         scope.test = [ 1, 1, 1, 1, 1 ];
         trigger('test');
-        assert('<div><span>1,1,1,1,1</span><span> Five or Six\n</span></div>', htmlGenerator(tree));
+        assert('<div><span> Five or Six\n</span></div>', htmlGenerator(tree));
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
 
         scope.test = [ 1, 1, 1, 1, 1, 1, 1, 1 ];
         trigger('test');
-        assert('<div><span>1,1,1,1,1,1,1,1</span><span> Others\n</span></div>', htmlGenerator(tree));
+        assert('<div><span> Others\n</span></div>', htmlGenerator(tree));
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
     },
 
@@ -255,7 +275,7 @@ var context = {
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
     },
 
-    test_test: function (scope, tpl) {
+    test_ifelse: function (scope, tpl) {
         scope.test1 = true;
         scope.test2 = true;
         scope.test3 = true;
@@ -295,10 +315,12 @@ var context = {
     },
     test_reference: function (scope, tpl) {
         scope.test = false;
+
         var tree = tpl(scope, generator);
 
         var doc = jsdom("<html><body></body></html>");
         var window = doc.defaultView;
+        global.document = window.document;
 
         var eee = domGenerator(tree, window.document, function (xxx) {
             xxx(window.document.body);
@@ -335,26 +357,30 @@ var context = {
         setElements(window.document.body, eee);
 
         assert(
-            '<html><head></head><body><div><span> Test not ready!\n</span></div><div></div></body></html>',
+            '<html><head></head><body><div></div><div></div></body></html>',
             serializeDocument(doc));
 
-        defer.resolve([1,2,3]);
+        defer.resolve({
+            'test.com': 'www.test.com',
+            'example.ru': 'www.example.ru'
+        });
         setTimeout(function () {
             assert(
-                '<html><head></head><body><div><span> Test ready!\n</span></div><div></div></body></html>',
+                '<html><head></head><body><div><span> Test ready!\n</span></div><div><a href="test.com">www.test.com</a><a href="example.ru">www.example.ru</a></div></body></html>',
                 serializeDocument(doc));
         }, 0);
     }
 };
 
 Promise.all([
-    // load('test_test'),
-    // load('test_while'),
-    // load('test_forin'),
-    // load('test_include', ['include/test1.jade']),
-    // load('test_casewhen'),
-    // load('test_mixin'),
-    // load('test_reference'),
+    load('test_method'),
+    load('test_ifelse'),
+    load('test_while'),
+    load('test_forin'),
+    load('test_include', ['include/test1.jade']),
+    load('test_casewhen'),
+    load('test_mixin'),
+    load('test_reference'),
     load('test_async'),
 ]).then(function (data) {
     data.forEach(function (p) {
