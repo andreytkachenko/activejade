@@ -12,7 +12,7 @@ var n_9=d.text(s,function(){return n_8;}," Test3 True\n",[]);return [n_9];
 var n_10=d.tag(s,function(){return n_7;},function(s){
 var n_11=d.text(s,function(){return n_10;}," Test3 False\n",[]);return [n_11];
 },"div",d.util.merge_attrs([{"id": "test1_true-test2_true-test3_false"}]),[],[]);return [n_10];
-}],function(s,c){return s.test3;},["test3"]);return [n_5,n_7];
+}],function(s,c){return d.__p(s.test3);},["test3"]);return [n_5,n_7];
 },function(s){
 var n_12=d.tag(s,function(){return n_4;},function(s){
 var n_13=d.text(s,function(){return n_12;}," Test2 False\n",[]);return [n_13];
@@ -24,8 +24,8 @@ var n_16=d.text(s,function(){return n_15;}," Test3 True\n",[]);return [n_16];
 var n_17=d.tag(s,function(){return n_14;},function(s){
 var n_18=d.text(s,function(){return n_17;}," Test3 False\n",[]);return [n_18];
 },"div",d.util.merge_attrs([{"id": "test1_true-test2_false-test3_false"}]),[],[]);return [n_17];
-}],function(s,c){return s.test3;},["test3"]);return [n_12,n_14];
-}],function(s,c){return s.test2;},["test2"]);return [n_2,n_4];
+}],function(s,c){return d.__p(s.test3);},["test3"]);return [n_12,n_14];
+}],function(s,c){return d.__p(s.test2);},["test2"]);return [n_2,n_4];
 },function(s){
 var n_19=d.tag(s,function(){return n_1;},function(s){
 var n_20=d.text(s,function(){return n_19;}," Test1 False\n",[]);return [n_20];
@@ -40,7 +40,7 @@ var n_26=d.text(s,function(){return n_25;}," Test3 True\n",[]);return [n_26];
 var n_27=d.tag(s,function(){return n_24;},function(s){
 var n_28=d.text(s,function(){return n_27;}," Test3 False\n",[]);return [n_28];
 },"div",d.util.merge_attrs([{"id": "test1_false-test2_true-test3_false"}]),[],[]);return [n_27];
-}],function(s,c){return s.test3;},["test3"]);return [n_22,n_24];
+}],function(s,c){return d.__p(s.test3);},["test3"]);return [n_22,n_24];
 },function(s){
 var n_29=d.tag(s,function(){return n_21;},function(s){
 var n_30=d.text(s,function(){return n_29;}," Test2 False\n",[]);return [n_30];
@@ -52,6 +52,6 @@ var n_33=d.text(s,function(){return n_32;}," Test3 True\n",[]);return [n_33];
 var n_34=d.tag(s,function(){return n_31;},function(s){
 var n_35=d.text(s,function(){return n_34;}," Test3 False\n",[]);return [n_35];
 },"div",d.util.merge_attrs([{"id": "test1_false-test2_false-test3_false"}]),[],[]);return [n_34];
-}],function(s,c){return s.test3;},["test3"]);return [n_29,n_31];
-}],function(s,c){return s.test2;},["test2"]);return [n_19,n_21];
-}],function(s,c){return s.test1;},["test1"]);;n_0=d.generate([n_1]);return n_0;}}]
+}],function(s,c){return d.__p(s.test3);},["test3"]);return [n_29,n_31];
+}],function(s,c){return d.__p(s.test2);},["test2"]);return [n_19,n_21];
+}],function(s,c){return d.__p(s.test1);},["test1"]);;n_0=d.generate([n_1]);return n_0;}}]

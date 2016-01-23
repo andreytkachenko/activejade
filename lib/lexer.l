@@ -72,7 +72,7 @@
 
         if (state.invar) state.invar = false;
 
-        var toks = ['ID', 'NUM', 'STRING', 'NULL', 'TRUE', 'FALSE'];
+        var toks = ['REF', 'ID', 'NUM', 'STRING', 'NULL', 'TRUE', 'FALSE'];
         var brace = [')', ']', '}'];
         var internal = [',']
 
@@ -136,6 +136,7 @@ CLASS                   [a-zA-Z_][a-zA-Z0-9_-]*
 STRING                  \"|\'
 NUM                     [0-9]
 ID                      [$a-zA-Z_][$a-zA-Z0-9_]*
+REF                     \#(?:[$a-zA-Z0-9_][$a-zA-Z0-9_-]*[$a-zA-Z_0-9_]|[$a-zA-Z_0-9_]+)
 MIXINNAME               [$a-zA-Z_][$a-zA-Z0-9_-]*
 WS                      [ \t]
 EQUAL                   \=\=\=|\=\=|\>\>\>|\<\<\<|\!\=\=|\=\=|\!\=|\>\=|\<\=|\>\>|\<\<
@@ -230,6 +231,7 @@ NL                      (?![a-zA-Z0-9_$])
 <expr-body>null{NL}         if (isExprNotEnd('NULL')) return 'NULL';
 <expr-body>true{NL}         if (isExprNotEnd('TRUE')) return 'TRUE';
 <expr-body>false{NL}        if (isExprNotEnd('FALSE')) return 'FALSE';
+<expr-body>{REF}            if (isExprNotEnd('REF')) return 'REF';
 <expr-body>{ID}             if (isExprNotEnd('ID')) return 'ID';
 <expr-body>{NUM}            if (isExprNotEnd('NUMBER')) ctx.enter('number', 0);
 <expr-body>{STRING}         if (isExprNotEnd('STRING')) ctx.enter('string', 0);
@@ -432,9 +434,10 @@ superblock{NL}              return 'SUPERBLOCK';
 append{NL}                  ctx.enter('block', 0);
 prepend{NL}                 ctx.enter('block', 0);
 (?:if|unless|while|else{WS}*if|when|case){NL}  ctx.enter("if-while", 0);
-(?:foreach|for|each){NL}    ctx.enter("for-each", 0);
+(?:for|each){NL}            ctx.enter("for-each", 0);
 else{NL}                    return 'ELSE';
 default{NL}                 return 'DEFAULT';
+pass{NL}                    return 'PASS';
 continue{NL}                return 'CONTINUE';
 yield{NL}                   return 'YIELD';
 break{NL}                   return 'BREAK';

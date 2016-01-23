@@ -6,10 +6,7 @@ var jsdom = require("jsdom").jsdom;
 var serializeDocument = require("jsdom").serializeDocument;
 var htmltidy = require('htmltidy').tidy;
 var fork = require('child_process').fork;
-
-process.on('uncaughtException', function (exception) {
-  console.log(exception);
-});
+var Q = require('q');
 
 var printTree = function (tree) {
     var cache = [];
@@ -58,24 +55,32 @@ var compile = function (name, deps, callback, reject) {
         else
             reject();
     });
+    exe.on('uncaughtException', function (exception) {
+      console.log(exception.stack);
+    });
 }
 
 var load = function(name, deps) {
     var deffered = Promise.defer();
 
     compile(name, deps, function () {
-        var tpls = require('../tests/compiled/' + name);
-        var tpl_name;
-        tpls.forEach(function (tpl) {
-            template.add( tpl.FILE_NAME, tpl.TEMPLATE );
-            if (~tpl.FILE_NAME.indexOf(name)) {
-                tpl_name = tpl.FILE_NAME;
-            }
-        });
+        try {
+            var tpls = require('../tests/compiled/' + name);
+            var tpl_name;
+            tpls.forEach(function (tpl) {
+                template.add( tpl.FILE_NAME, tpl.TEMPLATE );
+                if (~tpl.FILE_NAME.indexOf(name)) {
+                    tpl_name = tpl.FILE_NAME;
+                }
+            });
 
-        if (tpl_name) {
-            deffered.resolve({file: tpl_name, name: name});
-        } else {
+            if (tpl_name) {
+                deffered.resolve({file: tpl_name, name: name});
+            } else {
+                deffered.reject();
+            }
+        } catch (e) {
+            console.log(e.stack);
             deffered.reject();
         }
     }, deffered.reject);
@@ -163,6 +168,7 @@ var context = {
 
     test_casewhen: function (scope, tpl) {
         scope.test = [];
+
         var tree = tpl(scope, generator);
 
         var doc = jsdom("<html><body></body></html>");
@@ -253,6 +259,7 @@ var context = {
         scope.test1 = true;
         scope.test2 = true;
         scope.test3 = true;
+
         var tree = tpl(scope, generator);
 
         var doc = jsdom("<html><body></body></html>");
@@ -285,20 +292,80 @@ var context = {
         scope.test1 = false;
         trigger('test1');
         assert(wrap(htmlGenerator(tree)), serializeDocument(doc));
+    },
+    test_reference: function (scope, tpl) {
+        scope.test = false;
+        var tree = tpl(scope, generator);
+
+        var doc = jsdom("<html><body></body></html>");
+        var window = doc.defaultView;
+
+        var eee = domGenerator(tree, window.document, function (xxx) {
+            xxx(window.document.body);
+        });
+
+        setElements(window.document.body, eee);
+
+        assert('<html><head></head><body><div id="main">Hello\n\
+</div><div id="test"> Hi\n\
+</div></body></html>', serializeDocument(doc));
+
+        scope.test = true;
+        trigger('test');
+        setTimeout(function () {
+            assert(
+                '<html><head></head><body><div id="main">Hello\n, World! Hi\n</div><div id="test">Hi</div></body></html>',
+                serializeDocument(doc));
+        }, 0);
+    },
+    test_async: function (scope, tpl) {
+        var defer = Q.defer();
+
+        scope.test = defer.promise;
+
+        var tree = tpl(scope, generator);
+
+        var doc = jsdom("<html><body></body></html>");
+        var window = doc.defaultView;
+
+        var eee = domGenerator(tree, window.document, function (xxx) {
+            xxx(window.document.body);
+        });
+
+        setElements(window.document.body, eee);
+
+        assert(
+            '<html><head></head><body><div><span> Test not ready!\n</span></div><div></div></body></html>',
+            serializeDocument(doc));
+
+        defer.resolve([1,2,3]);
+        setTimeout(function () {
+            assert(
+                '<html><head></head><body><div><span> Test ready!\n</span></div><div></div></body></html>',
+                serializeDocument(doc));
+        }, 0);
     }
 };
 
 Promise.all([
-    load('test_test'),
-    load('test_while'),
-    load('test_forin'),
-    load('test_include', ['include/test1.jade']),
-    load('test_casewhen'),
-    load('test_mixin')
+    // load('test_test'),
+    // load('test_while'),
+    // load('test_forin'),
+    // load('test_include', ['include/test1.jade']),
+    // load('test_casewhen'),
+    // load('test_mixin'),
+    // load('test_reference'),
+    load('test_async'),
 ]).then(function (data) {
     data.forEach(function (p) {
         watching = {};
-        context[p.name]({}, template.get( p.file ));
+        try {
+            context[p.name]({}, template.get( p.file ));
+        } catch (e) {
+            console.log(e.stack);
+        }
         console.log('testing ', p.name);
     })
+}, function (err) {
+    console.log(err);
 });

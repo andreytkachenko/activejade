@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "commandline-parser": "^0.4.0",
-    "extend": "^3.0.0"
+    "extend": "^3.0.0",
+    "q": "^1.4.1"
   }
 }

@@ -54,4 +54,4 @@ div
 
 ## Standard Decorators
 1. `@on` - to attach event listener to tag element
-2. `@var` - to create local variable (in the scope) with node (not real DOM element - use varname.$ to access DOM element)
+2. `@var` - to create local variable (in the scope) with node (not a real DOM element - use varname.$ to access DOM element)

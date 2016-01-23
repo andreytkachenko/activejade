@@ -16,7 +16,15 @@
 %%
 
 program
-    : program-lines EOF
+    : extends EOF
+        { return [$1]; }
+    | NEWLINE extends EOF
+        { return [$2]; }
+    | extends extends-lines EOF
+        { return [$1].concat($2); }
+    | NEWLINE extends extends-lines EOF
+        { return [$2].concat($3); }
+    | program-lines EOF
         { return $1; }
     | NEWLINE program-lines EOF
         { return $2; }
@@ -24,18 +32,29 @@ program
         { return []; }
     ;
 
+program-line
+    : line
+    | mixin
+    | doctype
+    ;
+
+extends-line
+    : extend-block
+    | mixin
+    ;
+
+extends-lines
+    : extends-line
+        { $$ = [$1]; }
+    | extends-lines extends-line
+        { $$ = $1.concat([$2]); }
+    ;
+
 program-lines
     : program-line
         { $$ = [$1]; }
     | program-lines program-line
         { $$ = $1.concat([$2]); }
-    ;
-
-program-line
-    : line
-    | extends
-    | mixin
-    | doctype
     ;
 
 doctype
@@ -56,11 +75,29 @@ line
     | filter
     | comment
     | mixin-call-decorated
-    | YIELD NEWLINE
+    | loop-scope
+    | mixin-scope
+    | block-scope
+    ;
+
+loop-scope
+    : CONTINUE NEWLINE
+        { $$ = new yy.$.ContinueNode(); }
+    | BREAK NEWLINE
+        { $$ = new yy.$.BreakNode(); }
+    | BREAK NUM NEWLINE
+        { $$ = new yy.$.BreakNode($2); }
+    ;
+
+mixin-scope
+    : YIELD NEWLINE
         { $$ = new yy.$.MixinYieldNode(); }
     | BLOCK NEWLINE
         { $$ = new yy.$.MixinBlockNode(); }
-    | SUPERBLOCK NEWLINE
+    ;
+
+block-scope
+    : SUPERBLOCK NEWLINE
         { $$ = new yy.$.SuperBlockNode(); }
     ;
 
@@ -628,17 +665,6 @@ scalar
         { $$ = new yy.$.ScalarNode(null, 'null'); }
     ;
 
-identifier
-    : ID
-        { $$ = new yy.$.IdentifierNode($1); }
-    | identifier '.' ID
-        { $$ = new yy.$.PropertyOpNode($1, $3); }
-    | identifier '[' expr ']'
-        { $$ = new yy.$.IndexOpNode($1, $3); }
-    | '(' expr ')'
-        { $$ = $2; }
-    ;
-
 expr-statement
     : STATEMENT_TAG statement-node NEWLINE
         { $$ = $2; }
@@ -711,6 +737,8 @@ sub-expr
         { $$ = new yy.$.SliceOpNode($1, $3[0], $3[1]); }
     | array
     | object
+    | REF
+        { $$ = new yy.$.ReferenceNode($1); }
     ;
 
 expr
