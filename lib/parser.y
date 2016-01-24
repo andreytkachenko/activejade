@@ -58,7 +58,7 @@ program-lines
     ;
 
 doctype
-    : DOCTYPE
+    : DOCTYPE NEWLINE
         { $$ = new yy.$.DoctypeNode($1); }
     ;
 

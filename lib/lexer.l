@@ -390,7 +390,9 @@ NL                      (?![a-zA-Z0-9_$])
 <decorator>\n               ctx.leave(1, 0);
 
 <doctype>\n                 ctx.leave(1, 0);
-<doctype>[^]                return 'DOCTYPE';
+<doctype>"doctype"          /* ignore */
+<doctype>{WS}+              /* ignore */
+<doctype>[^\n]+             return 'DOCTYPE';
 
 <INITIAL>\n{WS}*\n          this.unput('\n');
 <INITIAL>\n{WS}*            {

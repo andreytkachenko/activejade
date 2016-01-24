@@ -50,7 +50,7 @@ if (context.type === "callback" && !context.callback) {
 }
 
 function compile_files(input) {
-    return compiler.compileFIles(input, {
+    return compiler.compileFiles(input, {
         type: context.type,
         callbac_name: context.callback
     });

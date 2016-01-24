@@ -1,0 +1,21 @@
+- page = {
+    title: "ActiveJade Examples",
+    scripts: [
+        "/js/app.js",
+        "/js/view.js"
+    ],
+    styles: [
+        "/css/main.css"
+    ]
+}
+
+doctype html
+html
+    head
+        title= page.title
+        for script in page.scripts
+            script(src=script, type="text/javascript")
+
+        for style in page.styles
+            link(href=style, rel="stylesheet")
+    body

@@ -372,26 +372,41 @@ Few lines of text\n\
             'test.com': 'www.test.com',
             'example.ru': 'www.example.ru'
         });
-        
+
         setTimeout(function () {
             assert(
                 '<html><head></head><body><div><span> Test ready!\n</span></div><div><a href="test.com">www.test.com</a><a href="example.ru">www.example.ru</a></div></body></html>',
                 serializeDocument(doc));
         }, 0);
+    },
+    test_indexpage: function (scope, tpl) {
+        var tree = tpl(scope, generator);
+        assert('\
+<!DOCTYPE html>\
+<html>\
+<head>\
+<title>ActiveJade Examples</title>\
+<script src="/js/app.js" type="text/javascript"></script>\
+<script src="/js/view.js" type="text/javascript"></script>\
+<link href="/css/main.css" rel="stylesheet">\
+</head>\
+<body></body>\
+</html>', htmlGenerator(tree));
     }
 };
 
 Promise.all([
-    load('test_tag'),
-    load('test_method'),
-    load('test_ifelse'),
-    load('test_while'),
-    load('test_forin'),
-    load('test_include', ['include/test1.jade']),
-    load('test_casewhen'),
-    load('test_mixin'),
-    load('test_reference'),
-    load('test_async'),
+    // load('test_tag'),
+    // load('test_method'),
+    // load('test_ifelse'),
+    // load('test_while'),
+    // load('test_forin'),
+    // load('test_include', ['include/test1.jade']),
+    // load('test_casewhen'),
+    // load('test_mixin'),
+    // load('test_reference'),
+    // load('test_async'),
+    load('test_indexpage'),
 ]).then(function (data) {
     data.forEach(function (p) {
         watching = {};

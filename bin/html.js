@@ -1,7 +1,7 @@
 var BaseGenerator = require('../lib/basegenerator');
 var htmlGenerator = require('../lib/htmlgenerator');
 var template = require('../lib/template').template;
-var htmltidy = require('htmltidy').tidy;
+// var htmltidy = require('htmltidy').tidy;
 
 var generator = new BaseGenerator({
     templateManager: template
@@ -56,10 +56,10 @@ var load = function(name, deps) {
     return deffered.promise;
 }
 
-if (!process.argv[2] || !process.argv[3]) {
+if (!process.argv[2]) {
     throw 'No file provided!';
 } else {
-    var scope = JSON.parse(process.argv[3]);
+    var scope = JSON.parse(process.argv[3] || '{}');
     load(process.argv[2]).then(function (p) {
         var tpl = template.get( p.file );
         var tree = tpl(scope, generator);
