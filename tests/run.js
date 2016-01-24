@@ -1,7 +1,6 @@
 var BaseGenerator = require('../lib/basegenerator');
 var htmlGenerator = require('../lib/htmlgenerator');
 var domGenerator = require('../lib/domgenerator');
-var template = require('../lib/template').template;
 var jsdom = require("jsdom").jsdom;
 var serializeDocument = require("jsdom").serializeDocument;
 var htmltidy = require('htmltidy').tidy;
@@ -28,8 +27,9 @@ var printTree = function (tree) {
 }
 
 var watching = {};
+var templates = {};
 var generator = new BaseGenerator({
-    templateManager: template,
+    templates: templates,
     watch: function (scope, deps, func) {
         if (deps) {
             deps.forEach(function (i) {
@@ -68,7 +68,7 @@ var load = function(name, deps) {
             var tpls = require('../tests/compiled/' + name);
             var tpl_name;
             tpls.forEach(function (tpl) {
-                template.add( tpl.FILE_NAME, tpl.TEMPLATE );
+                templates[tpl.FILE_NAME] = tpl.TEMPLATE;
                 if (~tpl.FILE_NAME.indexOf(name)) {
                     tpl_name = tpl.FILE_NAME;
                 }
@@ -396,22 +396,22 @@ Few lines of text\n\
 };
 
 Promise.all([
-    // load('test_tag'),
-    // load('test_method'),
-    // load('test_ifelse'),
-    // load('test_while'),
-    // load('test_forin'),
-    // load('test_include', ['include/test1.jade']),
-    // load('test_casewhen'),
-    // load('test_mixin'),
-    // load('test_reference'),
-    // load('test_async'),
+    load('test_tag'),
+    load('test_method'),
+    load('test_ifelse'),
+    load('test_while'),
+    load('test_forin'),
+    load('test_include', ['include/test1.jade']),
+    load('test_casewhen'),
+    load('test_mixin'),
+    load('test_reference'),
+    load('test_async'),
     load('test_indexpage'),
 ]).then(function (data) {
     data.forEach(function (p) {
         watching = {};
         try {
-            context[p.name]({}, template.get( p.file ));
+            context[p.name]({}, templates[p.file]);
         } catch (e) {
             console.log(e.stack);
         }

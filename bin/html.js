@@ -1,10 +1,10 @@
 var BaseGenerator = require('../lib/basegenerator');
 var htmlGenerator = require('../lib/htmlgenerator');
-var template = require('../lib/template').template;
 // var htmltidy = require('htmltidy').tidy;
 
+var templates = {};
 var generator = new BaseGenerator({
-    templateManager: template
+    templates: templates
 });
 
 var compile = function (name, deps, callback, reject) {
@@ -36,7 +36,7 @@ var load = function(name, deps) {
             var tpls = require(name+'.js');
             var tpl_name;
             tpls.forEach(function (tpl) {
-                template.add( tpl.FILE_NAME, tpl.TEMPLATE );
+                templates[tpl.FILE_NAME] = tpl.TEMPLATE;
                 if (~tpl.FILE_NAME.indexOf(name)) {
                     tpl_name = tpl.FILE_NAME;
                 }
@@ -61,7 +61,7 @@ if (!process.argv[2]) {
 } else {
     var scope = JSON.parse(process.argv[3] || '{}');
     load(process.argv[2]).then(function (p) {
-        var tpl = template.get( p.file );
+        var tpl = template[p.file];
         var tree = tpl(scope, generator);
         console.log(htmlGenerator(tree));
     });
