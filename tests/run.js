@@ -386,11 +386,12 @@ Few lines of text\n\
 <html>\
 <head>\
 <title>ActiveJade Examples</title>\
-<script src="/js/app.js" type="text/javascript"></script>\
-<script src="/js/view.js" type="text/javascript"></script>\
+<script src="/js/app.js"></script>\
+<script src="/js/view.js"></script>\
 <link href="/css/main.css" rel="stylesheet">\
 </head>\
-<body></body>\
+<body><h1> Hello, World!\n\
+</h1></body>\
 </html>', htmlGenerator(tree));
     }
 };
@@ -406,7 +407,7 @@ Promise.all([
     load('test_mixin'),
     load('test_reference'),
     load('test_async'),
-    load('test_indexpage'),
+    load('test_indexpage', ['include/main.jade']),
 ]).then(function (data) {
     data.forEach(function (p) {
         watching = {};

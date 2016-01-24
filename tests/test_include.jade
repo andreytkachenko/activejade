@@ -1,3 +1,6 @@
+
+- test1 = 'test1';
+
 div#root
     for v in test
-        include './tests/include/test1.jade' with { name: v }
+        include './tests/include/!{test1}.jade' with { name: v }
