@@ -1,0 +1,7 @@
+
+- test1 = 'test1';
+
+div#root
+    include 'main.jade'
+    for v in test
+        include '!{test1}.jade' with { name: v }

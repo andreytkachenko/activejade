@@ -372,7 +372,7 @@ NL                      (?![a-zA-Z0-9_$])
 
 <include>"include"          return 'INCLUDE';
 <include>"with"             return 'WITH';
-<include>"extends"          ctx.enter('expr'); return 'EXTENDS';
+<include>"extend"           ctx.enter('expr'); return 'EXTEND';
 <include>":"                ctx.enter('include-filter');return 'FILTER_TAG';
 <include>{WS}+              /* ignore */
 <include>\n                 ctx.leave(1, 0);
@@ -443,7 +443,7 @@ pass{NL}                    return 'PASS';
 continue{NL}                return 'CONTINUE';
 yield{NL}                   return 'YIELD';
 break{NL}                   return 'BREAK';
-(?:extends|include){NL}     ctx.enter('include', 0);
+(?:extend|include){NL}     ctx.enter('include', 0);
 
 {TAG}                       ctx.enter("tag", 0);
 \#{TAG}                     ctx.enter("tag", 0);

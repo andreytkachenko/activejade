@@ -1,6 +1,6 @@
 {
   "name": "activejade",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "description": "ActiveJade is a variant of original Jade(jade-lang.com) project aimed to work properly with MVVM frameworks",
   "main": "lib/index.js",
   "bin": {
@@ -25,11 +25,14 @@
   },
   "homepage": "https://github.com/andreytkachenko/activejade#readme",
   "devDependencies": {
+    "chai": "^3.4.1",
     "grunt": "^0.4.5",
     "grunt-cli": "^0.1.13",
     "grunt-jison": "^1.3.2",
+    "grunt-mocha-test": "^0.12.7",
     "htmltidy": "0.0.6",
-    "jsdom": "^7.2.2"
+    "jsdom": "^7.2.2",
+    "mocha": "^2.3.4"
   },
   "dependencies": {
     "commandline-parser": "^0.4.0",

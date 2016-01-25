@@ -41,6 +41,7 @@ program-line
 extends-line
     : extend-block
     | mixin
+    | comment
     ;
 
 extends-lines
@@ -69,7 +70,7 @@ line
     | for-in-if
     | case
     | include
-    | extend-block
+    | inline-block
     | text
     | expr-statement
     | filter
@@ -183,8 +184,8 @@ include
     ;
 
 extends
-    : EXTENDS expr NEWLINE
-        { $$ = new yy.$.ExtendsNode($2); }
+    : EXTEND expr NEWLINE
+        { $$ = new yy.$.ExtendNode($2); }
     ;
 
 filter
@@ -273,19 +274,32 @@ while
         { $$ = new yy.$.WhileNode($2, $4); }
     ;
 
-extend-block
+inline-block
     : BLOCK ID NEWLINE
-        { $$ = new yy.$.BlockNode($2, null, null); }
+        { $$ = new yy.$.BlockNode($2, null, null, false); }
     | BLOCK ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, null, $4); }
+        { $$ = new yy.$.BlockNode($2, null, $4, false); }
     | BLOCK APPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($3, 'APPEND', $5); }
+        { $$ = new yy.$.BlockNode($3, 'APPEND', $5, false); }
     | BLOCK PREPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($3, 'PREPEND', $5); }
+        { $$ = new yy.$.BlockNode($3, 'PREPEND', $5, false); }
     | APPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, 'APPEND', $4); }
+        { $$ = new yy.$.BlockNode($2, 'APPEND', $4, false); }
     | PREPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, 'PREPEND', $4); }
+        { $$ = new yy.$.BlockNode($2, 'PREPEND', $4, false); }
+    ;
+
+extend-block
+    : BLOCK ID NEWLINE block
+        { $$ = new yy.$.BlockNode($2, null, $4, true); }
+    | BLOCK APPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($3, 'APPEND', $5, true); }
+    | BLOCK PREPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($3, 'PREPEND', $5, true); }
+    | APPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($2, 'APPEND', $4, true); }
+    | PREPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($2, 'PREPEND', $4, true); }
     ;
 
 mixin-args-list

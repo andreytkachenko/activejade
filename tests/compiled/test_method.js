@@ -1,3 +1,0 @@
-module.exports=[{FILE_NAME:"./tests/test_method.jade",TEMPLATE:function(s,d){var n_0,__FILE__="./tests/test_method.jade";var n_1=d.next("tag",[s,function(){return n_0;},function(s){
-var n_2=d.next("text",[s,function(){return n_1;},function(s,c){return d.__p((d.__p(d.__p(s.test).toString)).call(d.__p(s.test)));},["test","test.toString"]]);return [n_2];
-},"div",null,false,[],[]]);;n_0=d.generate([n_1]);return n_0;}}]
