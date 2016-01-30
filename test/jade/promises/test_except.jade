@@ -1,0 +1,32 @@
+if test
+    div#if True
+else
+    div#if False
+except
+    wait
+        div#if-wait If Waiting...
+    error
+        div#if-error If Error!
+
+for x in test
+    div.for= x
+else
+    div.for-else For Else
+except
+    wait
+        div#for-wait For Waiting...
+
+- xx = 0;
+while test[xx]
+    div.while= test[xx]
+    - xx++;
+except
+    error
+        div#while-error While Error
+
+include incl
+    wait
+        div#include-wait Include Wait
+    error
+        div#include-error Include Error
+

@@ -152,7 +152,7 @@ NL                      (?![a-zA-Z0-9_$])
 %s for-each if-while
 %s mixin mixin-args mixin-call
 %s block include include-filter filter decorator
-%s doctype
+%s doctype except
 
 %%
 
@@ -394,6 +394,13 @@ NL                      (?![a-zA-Z0-9_$])
 <doctype>{WS}+              /* ignore */
 <doctype>[^\n]+             return 'DOCTYPE';
 
+<except>"wait"              return 'WAIT';
+<except>"error"             return 'ERROR';
+<except>"except"            return 'EXCEPT';
+<except>{ID}                return 'ID';
+<except>{WS}+               /* ignore */
+<except>\n                  ctx.leave(1, 0);
+
 <INITIAL>\n{WS}*\n          this.unput('\n');
 <INITIAL>\n{WS}*            {
                                 var indent = ctx._indent;
@@ -443,7 +450,8 @@ pass{NL}                    return 'PASS';
 continue{NL}                return 'CONTINUE';
 yield{NL}                   return 'YIELD';
 break{NL}                   return 'BREAK';
-(?:extend|include){NL}     ctx.enter('include', 0);
+(?:except|wait|error){NL}   ctx.enter('except', 0);
+(?:extend|include){NL}      ctx.enter('include', 0);
 
 {TAG}                       ctx.enter("tag", 0);
 \#{TAG}                     ctx.enter("tag", 0);

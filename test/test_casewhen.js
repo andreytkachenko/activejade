@@ -39,8 +39,10 @@ describe('CaseWhen', function() {
             tree = ctx.tpl(scope);
             document = createDocument();
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(document.body.innerHTML).to.equal('<div></div>');

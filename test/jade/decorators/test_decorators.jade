@@ -2,6 +2,5 @@ div
     | #{counter} times
     
 div
-    span#test
-    @on('click', (counter += 1) && (#test.innerHTML = counter))
+    @on('click', counter += 1)
     a(href="#") Click Me

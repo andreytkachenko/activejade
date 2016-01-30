@@ -16,8 +16,10 @@ describe('Mixin', function() {
             tree = ctx.tpl(scope);
             document = createDocument();
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(generateHTML(tree)).to.equal('<div></div>');

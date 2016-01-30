@@ -27,10 +27,33 @@ Few lines of text\n\
         var ctx = prepare(['test_indexpage'], 'tags');
         var scope, tree, document;
 
-        it('default', function() {
+        it('static', function() {
             scope = {};
             tree = ctx.tpl(scope);
             expect(generateHTML(tree)).to.equal('\
+<!DOCTYPE html>\
+<html>\
+<head>\
+<title>ActiveJade Examples</title>\
+<script src="/js/app.js"></script>\
+<script src="/js/view.js"></script>\
+<link href="/css/main.css" rel="stylesheet">\
+</head>\
+<body><h1> Hello, World!\n\
+</h1></body>\
+</html>');
+        });
+
+        it('dynamic', function() {
+            scope = {};
+            tree = ctx.tpl(scope);
+            document = createDocument();
+
+            generateDOM(tree, document, {
+                rootElement: document
+            });
+
+            expect(document.__serialize()).to.equal('\
 <!DOCTYPE html>\
 <html>\
 <head>\

@@ -65,11 +65,11 @@ doctype
 
 line
     : tag
-    | if
-    | while
-    | for-in-if
-    | case
-    | include
+    | if-safe
+    | while-safe
+    | for-in-safe
+    | case-safe
+    | include-safe
     | inline-block
     | text
     | expr-statement
@@ -188,6 +188,28 @@ extends
         { $$ = new yy.$.ExtendNode($2); }
     ;
 
+inline-block
+    : BLOCK ID NEWLINE
+        { $$ = new yy.$.BlockNode($2, null, null, false); }
+    | BLOCK ID NEWLINE block
+        { $$ = new yy.$.BlockNode($2, null, $4, false); }
+    ;
+
+extend-block
+    : BLOCK ID NEWLINE
+        { $$ = new yy.$.BlockNode($2, null, null, true); }
+    | BLOCK ID NEWLINE block
+        { $$ = new yy.$.BlockNode($2, null, $4, true); }
+    | BLOCK APPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($3, 'APPEND', $5, true); }
+    | BLOCK PREPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($3, 'PREPEND', $5, true); }
+    | APPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($2, 'APPEND', $4, true); }
+    | PREPEND ID NEWLINE block
+        { $$ = new yy.$.BlockNode($2, 'PREPEND', $4, true); }
+    ;
+
 filter
     : FILTER_TAG ID NEWLINE text-block
         { $$ = new yy.$.FilterNode($2, $4); }
@@ -246,6 +268,12 @@ for-in-if
         { $$ = new yy.$.ForInIfNode($1[0], $1[1], $1[2], $5, $3); }
     ;
 
+for-in-if-else
+    : for-in-if
+    | for-in-if ELSE NEWLINE block
+        { $1.setElse($4); $$ = $1 }
+    ;
+
 when-block
     : WHEN expr NEWLINE
         { $$ = new yy.$.CaseWhenNode($2, null); }
@@ -274,32 +302,62 @@ while
         { $$ = new yy.$.WhileNode($2, $4); }
     ;
 
-inline-block
-    : BLOCK ID NEWLINE
-        { $$ = new yy.$.BlockNode($2, null, null, false); }
-    | BLOCK ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, null, $4, false); }
-    | BLOCK APPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($3, 'APPEND', $5, false); }
-    | BLOCK PREPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($3, 'PREPEND', $5, false); }
-    | APPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, 'APPEND', $4, false); }
-    | PREPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, 'PREPEND', $4, false); }
+except-wait
+    : WAIT NEWLINE block
+        { $$ = new yy.$.ExceptWaitNode($3); }
     ;
 
-extend-block
-    : BLOCK ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, null, $4, true); }
-    | BLOCK APPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($3, 'APPEND', $5, true); }
-    | BLOCK PREPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($3, 'PREPEND', $5, true); }
-    | APPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, 'APPEND', $4, true); }
-    | PREPEND ID NEWLINE block
-        { $$ = new yy.$.BlockNode($2, 'PREPEND', $4, true); }
+except-error
+    : ERROR NEWLINE block
+        { $$ = new yy.$.ExceptErrorNode($3); }
+    | ERROR ID NEWLINE block
+        { $$ = new yy.$.ExceptErrorNode($4, $2); }
+    ;
+
+except-block
+    : except-wait
+        { $$ = [ $1, null ]; }
+    | except-error
+        { $$ = [ null, $1 ]; }
+    | except-wait except-error
+        { $$ = [ $1, $2 ]; }
+    | except-error except-wait
+        { $$ = [ $2, $1 ]; }
+    ;
+
+except
+    : EXCEPT NEWLINE INDENT except-block DEDENT
+        { $$ = new yy.$.ExceptNode( $4[0], $4[1] ); }
+    ;
+
+if-safe
+    : if
+    | if except
+        { $1.setExcept($2); $$ = $1; }
+    ;
+
+for-in-safe
+    : for-in-if-else
+    | for-in-if-else except
+        { $1.setExcept($2); $$ = $1; }
+    ;
+
+while-safe
+    : while
+    | while except
+        { $1.setExcept($2); $$ = $1; }
+    ;
+
+case-safe
+    : case
+    | case except
+        { $1.setExcept($2); $$ = $1; }
+    ;
+
+include-safe
+    : include
+    | include INDENT except-block DEDENT
+        { $1.setExcept(new yy.$.ExceptNode( $3[0], $3[1] )); $$ = $1; }
     ;
 
 mixin-args-list

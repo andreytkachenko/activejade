@@ -27,8 +27,10 @@ describe('IfElse', function() {
             tree = ctx.tpl(scope);
             document = createDocument();
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(document.body.innerHTML).to.equal('<div> False\n</div><div><div> False\n</div></div>');
@@ -94,8 +96,10 @@ describe('IfElse', function() {
             tree = ctx.tpl(scope);
             document = createDocument();
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             document.getElementById('test1_true').test1 = true;

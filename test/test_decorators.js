@@ -7,26 +7,25 @@ describe('Decorators', function() {
         prepare = tests.prepare.bind(tests),
         createDocument = tests.createDocument;
 
-    describe('index page', function () {
-        // var ctx = prepare(['test_interp_expr'], 'decorators');
+    describe('on click', function () {
+        // var ctx = prepare(['test_decorators'], 'decorators');
         // var scope, tree, document;
-        //
-        // it('default', function() {
-        //     scope = {};
+
+        // it('default', function (done) {
+        //     scope = { };
         //     tree = ctx.tpl(scope);
-        //
-        //     expect('\
-        //     <!DOCTYPE html>\
-        //     <html>\
-        //     <head>\
-        //     <title>ActiveJade Examples</title>\
-        //     <script src="/js/app.js"></script>\
-        //     <script src="/js/view.js"></script>\
-        //     <link href="/css/main.css" rel="stylesheet">\
-        //     </head>\
-        //     <body><h1> Hello, World!\n\
-        //     </h1></body>\
-        //     </html>', generateHTML(tree));
+
+        //     document = createDocument();
+        //     generateDOM(tree, document, {
+        //         onchange: function (xxx) {
+        //             xxx(document.body);
+        //         }
+        //     });
+
+        //     expect(document.body.innerHTML).to.equal('<div> times</div><div><a href="#">Click Me</a></div>');
+
+            
+            
         // });
     });
 });

@@ -17,7 +17,7 @@ describe('Expressions', function() {
 
             expect(generateHTML(tree)).to.equal('\
 before <b>Hi</b> after \n\
-before&gt;b&lt;Hi&gt;/b&lt;after\n\
+before&lt;b&gt;Hi&lt;/b&gt;after\n\
 <b>Hi</b> after\n\
 before <b>Hi</b>\n');
 
@@ -27,13 +27,15 @@ before <b>Hi</b>\n');
             scope = { test: '<b>Hi</b>' };
             tree = ctx.tpl(scope);
             document = createDocument();
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(document.body.innerHTML).to.equal('\
 before <b>Hi</b> after \n\
-before&gt;b&lt;Hi&gt;/b&lt;after\n\
+before&lt;b&gt;Hi&lt;/b&gt;after\n\
 <b>Hi</b> after\n\
 before <b>Hi</b>\n');
 
@@ -41,7 +43,7 @@ before <b>Hi</b>\n');
             ctx.trigger('test');
             expect(document.body.innerHTML).to.equal('\
 before <i>Hello</i> after \n\
-before&gt;i&lt;Hello&gt;/i&lt;after\n\
+before&lt;i&gt;Hello&lt;/i&gt;after\n\
 <i>Hello</i> after\n\
 before <i>Hello</i>\n')
         });
@@ -56,8 +58,10 @@ before <i>Hello</i>\n')
             tree = ctx.tpl(scope);
             document = createDocument();
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(generateHTML(tree)).to.equal('<div>false</div>');
@@ -69,6 +73,59 @@ before <i>Hello</i>\n')
             expect(document.body.innerHTML).to.equal('<div>1,2,3</div>');
         });
 
+    });
+
+    describe('range expr', function () {
+        var ctx = prepare(['test_range'], 'expressions');
+        var scope, tree, document;
+
+        it('default', function() {
+            scope = { from: 0, to: 1 };
+            tree = ctx.tpl(scope);
+            document = createDocument();
+
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
+            });
+
+            expect(generateHTML(tree)).to.equal('<a>0</a><a>1</a>');
+            expect(document.body.innerHTML).to.equal('<a>0</a><a>1</a>');
+
+            scope.from = 5;
+            scope.to = 8;
+            ctx.trigger('from');
+            expect(generateHTML(tree)).to.equal('<a>5</a><a>6</a><a>7</a><a>8</a>');
+            expect(document.body.innerHTML).to.equal('<a>5</a><a>6</a><a>7</a><a>8</a>');
+        });
+    });
+
+    describe('slice expr', function () {
+        var ctx = prepare(['test_slice'], 'expressions');
+        var scope, tree, document;
+
+        it('default', function() {
+            scope = { test:[0,1,2,3,4], from: 2, to: 4 };
+            tree = ctx.tpl(scope);
+            document = createDocument();
+
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
+            });
+
+            expect(generateHTML(tree)).to.equal('<a>2</a><a>3</a>');
+            expect(document.body.innerHTML).to.equal('<a>2</a><a>3</a>');
+
+            scope.from = 4;
+            scope.to = 8;
+            scope.test = [1,2,3,4,5,6,7,8,9];
+            ctx.trigger('from');
+            expect(generateHTML(tree)).to.equal('<a>5</a><a>6</a><a>7</a><a>8</a>');
+            expect(document.body.innerHTML).to.equal('<a>5</a><a>6</a><a>7</a><a>8</a>');
+        });
     });
 
 //     describe('tag interpolation', function () {

@@ -1,6 +1,7 @@
 var activejade = require('../../lib/index');
 var fs = require('fs');
 var jsdom = require("jsdom").jsdom;
+var serializeDocument = require('jsdom').serializeDocument;
 
 var self = {
     templates: {},
@@ -61,6 +62,10 @@ var self = {
                     return namespace + '/' + name;
                 }));
 
+                obj.tpls = names.map(function (name) {
+                    return self.templates[ name ];
+                });
+
                 return self.templates[ names[0] ](scope, generator);
             },
         };
@@ -70,6 +75,9 @@ var self = {
     createDocument: function () {
         var doc = jsdom("<html><body></body></html>");
         var window = doc.defaultView;
+        window.document.__serialize = function () {
+            return serializeDocument(doc);
+        };
 
         return window.document;
     },

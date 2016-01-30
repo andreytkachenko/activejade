@@ -14,12 +14,15 @@ describe('Promises', function() {
 
         it('default', function(done) {
             var defer = Q.defer();
-            scope = { teste: defer.promise };
+
+            scope = { test: defer.promise };
             tree = ctx.tpl(scope);
             document = createDocument();
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(document.body.innerHTML)
@@ -43,13 +46,16 @@ describe('Promises', function() {
         var scope, tree, document;
 
         it('default', function(done) {
-            var deferred = Promise.defer();
+            var deferred = Q.defer();
+
             scope = { test: false };
             tree = ctx.tpl(scope);
             document = createDocument();
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(document.body.innerHTML).to.equal('<div> False\n</div><div><div> False\n</div></div>');
@@ -66,6 +72,60 @@ describe('Promises', function() {
         });
     });
 
+    describe('for in', function () {
+        var ctx = prepare(['test_forin'], 'promises');
+        var scope, tree, document;
+
+        it('static', function( done ) {
+            var deferred = Q.defer();
+
+            scope = { test: false };
+            tree = ctx.tpl(scope);
+
+            expect(generateHTML(tree)).to.equal('<h1 id="x2"> No records\n</h1>');
+
+            scope.test = deferred.promise;
+            ctx.trigger('test');
+
+            expect(generateHTML(tree)).to.equal('');
+
+            deferred.resolve([1,2,3,4]);
+            setTimeout(function () {
+                expect(generateHTML(tree))
+                    .to.equal('<h1 id="x1"> Hello, this is a for-in test\n</h1><div id="x3">1</div><div id="x3">3</div>');
+                done();
+            }, 0);
+        });
+
+        it('dynamic', function() {
+            var deferred = Q.defer();
+
+            scope = { test: false };
+            tree = ctx.tpl(scope);
+            document = createDocument();
+
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
+            });
+
+            expect(document.body.innerHTML).to.equal('<h1 id="x2"> No records\n</h1>');
+
+            scope.test = deferred.promise;
+            ctx.trigger('test');
+
+            expect(document.body.innerHTML).to.equal('');
+
+            deferred.resolve([1,2,3,4]);
+            setTimeout(function () {
+                expect(document.body.innerHTML)
+                    .to.equal('<h1 id="x1"> Hello, this is a for-in test\n</h1><div id="x3">1</div><div id="x3">3</div>');
+                done();
+            }, 0);
+        });
+    });
+
     describe('references', function () {
         var ctx = prepare(['test_reference'], 'promises');
         var scope, tree, document;
@@ -76,8 +136,10 @@ describe('Promises', function() {
             document = createDocument();
             global.document = document;
 
-            generateDOM(tree, document, function (xxx) {
-                xxx(document.body);
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
             });
 
             expect(document.body.innerHTML).to.equal('<div id="main">Hello\n\
@@ -90,6 +152,76 @@ describe('Promises', function() {
                 expect(document.body.innerHTML).to.equal(
                     '<div id="main">Hello\n, World! Hi\n</div><div id="test"> Hi\n</div>');
                 done();
+            }, 0);
+        });
+    });
+
+    describe('except', function () {
+        var ctx = prepare(['test_except', 'test_except_include'], 'promises');
+        var scope, tree, document;
+
+        it('resolve', function(done) {
+            var test_defer = Q.defer();
+            var incl_defer = Q.defer();
+
+            scope = { test: false, incl: incl_defer.promise };
+            tree = ctx.tpl(scope);
+            document = createDocument();
+
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
+            });
+
+            expect(generateHTML(tree)).to.equal('<div id="if"> False\n</div><div class="for-else"> For Else\n</div><div id="include-wait"> Include Wait\n</div>');
+            expect(document.body.innerHTML).to.equal('<div id="if"> False\n</div><div class="for-else"> For Else\n</div><div id="include-wait"> Include Wait\n</div>');
+
+            scope.test = test_defer.promise;
+            ctx.trigger('test');
+            expect(document.body.innerHTML).to.equal('<div id="if-wait"> If Waiting...\n</div><div id="for-wait"> For Waiting...\n</div><div id="include-wait"> Include Wait\n</div>');
+
+            test_defer.resolve([ 1,2,3 ]);
+            setTimeout(function () {
+                expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div id="include-wait"> Include Wait\n</div>');
+
+                incl_defer.resolve('test_except_include.jade');
+                setTimeout(function () {
+                    expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><a> Include Content\n</a>');
+                    done();
+                }, 0);
+            }, 0);
+        });
+
+        it('reject', function(done) {
+            var test_defer = Q.defer();
+            var incl_defer = Q.defer();
+
+            scope = { test: false, incl: incl_defer.promise };
+            tree = ctx.tpl(scope);
+            document = createDocument();
+
+            generateDOM(tree, document, {
+                onchange: function (xxx) {
+                    xxx(document.body);
+                }
+            });
+
+            expect(document.body.innerHTML).to.equal('<div id="if"> False\n</div><div class="for-else"> For Else\n</div><div id="include-wait"> Include Wait\n</div>');
+
+            scope.test = test_defer.promise;
+            ctx.trigger('test');
+            expect(document.body.innerHTML).to.equal('<div id="if-wait"> If Waiting...\n</div><div id="for-wait"> For Waiting...\n</div><div id="include-wait"> Include Wait\n</div>');
+
+            test_defer.reject("Oops");
+            setTimeout(function () {
+                expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div id="include-wait"> Include Wait\n</div>');
+
+                incl_defer.reject('Oops');
+                setTimeout(function () {
+                    expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><a> Include Content\n</a>');
+                    done();
+                }, 0);
             }, 0);
         });
     });
