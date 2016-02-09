@@ -38,14 +38,20 @@ var self = {
             }
         })
     },
-    loadTemplates: function (filenames) {
-        filenames = filenames.map(function (filename) {
+    loadTemplates: function (_filenames) {
+        filenames = _filenames.map(function (filename) {
             return './test/jade/' + filename + '.jade';
         });
 
-        eval(filenames.map(function (filename) {
+        var data = filenames.map(function (filename) {
             return 'this.templates["' + filename + '"]=' + activejade.compile(fs.readFileSync(filename, 'utf8'), {filename: filename});
-        }).join(';'));
+        });
+
+        eval(data.join(';'));
+
+        _filenames.forEach(function (filename, index) {
+            fs.writeFileSync('./test/compiled/' + filename.replace('/','_') + '.js', data[index], 'utf8');
+        });
 
         return filenames;
     },
@@ -57,6 +63,8 @@ var self = {
             },
 
             tpl: function (scope) {
+                obj.watching = {};
+
                 var generator = self.createGenerator(obj.watching);
                 var names = self.loadTemplates(templates.map(function (name) {
                     return namespace + '/' + name;

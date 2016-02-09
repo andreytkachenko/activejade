@@ -179,15 +179,18 @@ describe('Promises', function() {
 
             scope.test = test_defer.promise;
             ctx.trigger('test');
+            expect(generateHTML(tree)).to.equal('<div id="if-wait"> If Waiting...\n</div><div id="for-wait"> For Waiting...\n</div><div id="include-wait"> Include Wait\n</div>');
             expect(document.body.innerHTML).to.equal('<div id="if-wait"> If Waiting...\n</div><div id="for-wait"> For Waiting...\n</div><div id="include-wait"> Include Wait\n</div>');
 
             test_defer.resolve([ 1,2,3 ]);
             setTimeout(function () {
-                expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div id="include-wait"> Include Wait\n</div>');
+                expect(generateHTML(tree)).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div class="while">1</div><div class="while">2</div><div class="while">3</div><div id="include-wait"> Include Wait\n</div>');
+                expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div class="while">1</div><div class="while">2</div><div class="while">3</div><div id="include-wait"> Include Wait\n</div>');
 
                 incl_defer.resolve('test_except_include.jade');
                 setTimeout(function () {
-                    expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><a> Include Content\n</a>');
+                    expect(generateHTML(tree)).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div class="while">1</div><div class="while">2</div><div class="while">3</div><a> Include Content\n</a>');
+                    expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div class="while">1</div><div class="while">2</div><div class="while">3</div><a> Include Content\n</a>');
                     done();
                 }, 0);
             }, 0);
@@ -207,19 +210,54 @@ describe('Promises', function() {
                 }
             });
 
+            expect(generateHTML(tree)).to.equal('<div id="if"> False\n</div><div class="for-else"> For Else\n</div><div id="include-wait"> Include Wait\n</div>');
             expect(document.body.innerHTML).to.equal('<div id="if"> False\n</div><div class="for-else"> For Else\n</div><div id="include-wait"> Include Wait\n</div>');
 
             scope.test = test_defer.promise;
             ctx.trigger('test');
+            expect(generateHTML(tree)).to.equal('<div id="if-wait"> If Waiting...\n</div><div id="for-wait"> For Waiting...\n</div><div id="include-wait"> Include Wait\n</div>');
             expect(document.body.innerHTML).to.equal('<div id="if-wait"> If Waiting...\n</div><div id="for-wait"> For Waiting...\n</div><div id="include-wait"> Include Wait\n</div>');
 
-            test_defer.reject("Oops");
+            test_defer.reject('Oops');
             setTimeout(function () {
-                expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><div id="include-wait"> Include Wait\n</div>');
+                expect(generateHTML(tree)).to.equal('<div id="if-error"> If Error!\n</div><div id="while-error"> While Error\n</div><div id="include-wait"> Include Wait\n</div>');
+                expect(document.body.innerHTML).to.equal('<div id="if-error"> If Error!\n</div><div id="while-error"> While Error\n</div><div id="include-wait"> Include Wait\n</div>');
 
                 incl_defer.reject('Oops');
+
                 setTimeout(function () {
-                    expect(document.body.innerHTML).to.equal('<div id="if"> True\n</div><div class="for">1</div><div class="for">2</div><div class="for">3</div><a> Include Content\n</a>');
+                    expect(generateHTML(tree)).to.equal('<div id="if-error"> If Error!\n</div><div id="while-error"> While Error\n</div><div id="include-error"> Include Error\n</div>');
+                    expect(document.body.innerHTML).to.equal('<div id="if-error"> If Error!\n</div><div id="while-error"> While Error\n</div><div id="include-error"> Include Error\n</div>');
+                    done();
+                }, 0);
+            }, 0);
+        });
+    });
+    describe('multicall', function () {
+        var ctx = prepare(['test_multicall'], 'promises');
+
+        it('default', function(done) {
+            var defer1 = Q.defer();
+            var defer2 = Q.defer();
+
+            var scope = {
+                ttt: 0,
+                test1: 5,
+                test2: function () {
+                    return scope.ttt++;
+                },
+                test3: defer1.promise
+            }
+
+            var tree = ctx.tpl(scope);
+            expect(generateHTML(tree)).to.equal('<div></div>');
+
+            defer1.resolve(function () {return defer2.promise});
+            setTimeout(function() {
+                expect(generateHTML(tree)).to.equal('<div></div>');
+                defer2.resolve(7);
+                setTimeout(function() {
+                    expect(generateHTML(tree)).to.equal('<div>12</div>');
                     done();
                 }, 0);
             }, 0);
